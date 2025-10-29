@@ -15,7 +15,7 @@
 <!-- Add Test Config Type Modal -->
 {% if perms.test_config_type_app.add_testconfigtype %}
 <div class="modal fade" id="addTestConfigTypeModal" tabindex="-1" aria-labelledby="addTestConfigTypeModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addTestConfigTypeModalLabel">Add New Test Config Type</h5>
@@ -33,156 +33,44 @@
                         <textarea class="form-control" id="add_description" name="description" rows="3"></textarea>
                     </div>
                     
-                    <!-- Measurements Section -->
+                    <!-- Test Steps Section -->
                     <div class="card mb-3">
-                        <div class="card-header">
-                            <strong>Measurements</strong>
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <strong>Test Steps</strong>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addStep()">Add Step</button>
                         </div>
                         <div class="card-body">
-                            <!-- Voltage Measurements -->
-                            <h6 class="mb-3">Voltage Measurements</h6>
-                            <div id="voltage-measurements-container">
-                                <div class="voltage-measurement mb-2">
+                            <div id="steps-container">
+                                <!-- Single initial step -->
+                                <div class="step mb-3 p-3 border rounded">
                                     <div class="row">
-                                        <div class="col-md-4">
-                                            <input type="text" class="form-control" name="voltage_param_name_0" placeholder="Parameter Name">
+                                        <div class="col-md-10">
+                                            <div class="row">
+                                                <div class="col-md-2">
+                                                    <label class="form-label">Step Type</label>
+                                                    <select class="form-select step-type" name="step_type_0" onchange="updateStepFields(0)">
+                                                        <option value="">Select Type</option>
+                                                        <option value="VOLTAGE">Voltage Measurement</option>
+                                                        <option value="CURRENT">Current Measurement</option>
+                                                        <option value="RESISTANCE">Resistance Measurement</option>
+                                                        <option value="FREQUENCY">Frequency Measurement</option>
+                                                        <option value="QUESTION">Yes/No Question</option>
+                                                        <option value="INSTRUCTION">Instruction</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-10">
+                                                    <div class="step-fields-container" id="step-fields-0">
+                                                        <p class="text-muted">Select a step type to configure fields</p>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="col-md-2">
-                                            <input type="number" step="any" class="form-control" name="voltage_min_0" placeholder="Min">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input type="number" step="any" class="form-control" name="voltage_max_0" placeholder="Max">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <select class="form-select" name="voltage_unit_0">
-                                                <option value="V">V</option>
-                                                <option value="mV">mV</option>
-                                                <option value="kV">kV</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'voltage')">Remove</button>
+                                        <div class="col-md-2 d-flex align-items-center">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStep(this)">Remove</button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('voltage')">Add Voltage Measurement</button>
-                            
-                            <!-- Current Measurements -->
-                            <h6 class="mb-3 mt-3">Current Measurements</h6>
-                            <div id="current-measurements-container">
-                                <div class="current-measurement mb-2">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <input type="text" class="form-control" name="current_param_name_0" placeholder="Parameter Name">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input type="number" step="any" class="form-control" name="current_min_0" placeholder="Min">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input type="number" step="any" class="form-control" name="current_max_0" placeholder="Max">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <select class="form-select" name="current_unit_0">
-                                                <option value="A">A</option>
-                                                <option value="mA">mA</option>
-                                                <option value="μA">μA</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'current')">Remove</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('current')">Add Current Measurement</button>
-                            
-                            <!-- Resistance Measurements -->
-                            <h6 class="mb-3 mt-3">Resistance Measurements</h6>
-                            <div id="resistance-measurements-container">
-                                <div class="resistance-measurement mb-2">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <input type="text" class="form-control" name="resistance_param_name_0" placeholder="Parameter Name">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input type="number" step="any" class="form-control" name="resistance_min_0" placeholder="Min">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input type="number" step="any" class="form-control" name="resistance_max_0" placeholder="Max">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <select class="form-select" name="resistance_unit_0">
-                                                <option value="Ω">Ω</option>
-                                                <option value="kΩ">kΩ</option>
-                                                <option value="MΩ">MΩ</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'resistance')">Remove</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('resistance')">Add Resistance Measurement</button>
-                            
-                            <!-- Frequency Measurements -->
-                            <h6 class="mb-3 mt-3">Frequency Measurements</h6>
-                            <div id="frequency-measurements-container">
-                                <div class="frequency-measurement mb-2">
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <input type="text" class="form-control" name="frequency_param_name_0" placeholder="Parameter Name">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input type="number" step="any" class="form-control" name="frequency_min_0" placeholder="Min">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input type="number" step="any" class="form-control" name="frequency_max_0" placeholder="Max">
-                                        </div>
-                                        <div class="col-md-2">
-                                            <select class="form-select" name="frequency_unit_0">
-                                                <option value="Hz">Hz</option>
-                                                <option value="kHz">kHz</option>
-                                                <option value="MHz">MHz</option>
-                                                <option value="GHz">GHz</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'frequency')">Remove</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('frequency')">Add Frequency Measurement</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Yes/No Questions Section -->
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <strong>Yes/No Questions</strong>
-                        </div>
-                        <div class="card-body">
-                            <div id="yesno-questions-container">
-                                <div class="yesno-question mb-2">
-                                    <div class="row">
-                                        <div class="col-md-8">
-                                            <input type="text" class="form-control" name="question_text_0" placeholder="Question">
-                                        </div>
-                                        <div class="col-md-3">
-                                            <select class="form-select" name="question_required_0">
-                                                <option value="true">Expected: Yes</option>
-                                                <option value="false">Expected: No</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-1">
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">Remove</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addQuestion()">Add Question</button>
                         </div>
                     </div>
                 </div>
@@ -199,7 +87,7 @@
 <!-- Edit Test Config Type Modal -->
 {% if perms.test_config_type_app.change_testconfigtype %}
 <div class="modal fade" id="editTestConfigTypeModal" tabindex="-1" aria-labelledby="editTestConfigTypeModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="editTestConfigTypeModalLabel">Edit Test Config Type</h5>
@@ -218,52 +106,16 @@
                         <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
                     </div>
                     
-                    <!-- Measurements Section -->
+                    <!-- Test Steps Section -->
                     <div class="card mb-3">
-                        <div class="card-header">
-                            <strong>Measurements</strong>
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <strong>Test Steps</strong>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addStep(true)">Add Step</button>
                         </div>
                         <div class="card-body">
-                            <!-- Voltage Measurements -->
-                            <h6 class="mb-3">Voltage Measurements</h6>
-                            <div id="edit-voltage-measurements-container">
-                                <!-- Will be populated by JavaScript -->
+                            <div id="edit-steps-container">
+                                <!-- Steps will be populated by JavaScript -->
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('voltage', true)">Add Voltage Measurement</button>
-                            
-                            <!-- Current Measurements -->
-                            <h6 class="mb-3 mt-3">Current Measurements</h6>
-                            <div id="edit-current-measurements-container">
-                                <!-- Will be populated by JavaScript -->
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('current', true)">Add Current Measurement</button>
-                            
-                            <!-- Resistance Measurements -->
-                            <h6 class="mb-3 mt-3">Resistance Measurements</h6>
-                            <div id="edit-resistance-measurements-container">
-                                <!-- Will be populated by JavaScript -->
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('resistance', true)">Add Resistance Measurement</button>
-                            
-                            <!-- Frequency Measurements -->
-                            <h6 class="mb-3 mt-3">Frequency Measurements</h6>
-                            <div id="edit-frequency-measurements-container">
-                                <!-- Will be populated by JavaScript -->
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('frequency', true)">Add Frequency Measurement</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Yes/No Questions Section -->
-                    <div class="card mb-3">
-                        <div class="card-header">
-                            <strong>Yes/No Questions</strong>
-                        </div>
-                        <div class="card-body">
-                            <div id="edit-yesno-questions-container">
-                                <!-- Will be populated by JavaScript -->
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addQuestion(true)">Add Question</button>
                         </div>
                     </div>
                 </div>
@@ -335,6 +187,7 @@
                         <tr>
                             <th scope="col">Name</th>
                             <th scope="col">Description</th>
+                            <th scope="col">Steps Count</th>
                             <th scope="col">Created</th>
                             <th scope="col">Actions</th>
                         </tr>
@@ -344,6 +197,7 @@
                             <tr>
                                 <td>{{ test_config.name }}</td>
                                 <td>{{ test_config.description|default:"-" }}</td>
+                                <td>{{ test_config.steps.count }}</td>
                                 <td>{{ test_config.created_at|date:"M d, Y" }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
@@ -448,99 +302,42 @@
 
 {% block extra_js %}
 <script>
-    // Define counters for each type of measurement/question
-    let voltageCount = 0;
-    let currentCount = 0;
-    let resistanceCount = 0;
-    let frequencyCount = 0;
-    let questionCount = 0;
-    // For edit mode
-    let editVoltageCount = 0;
-    let editCurrentCount = 0;
-    let editResistanceCount = 0;
-    let editFrequencyCount = 0;
-    let editQuestionCount = 0;
+    let stepCount = 1;
+    let editStepCount = 0;
 
-    // Function to add a new measurement
-    function addMeasurement(type, isEdit = false) {
-        const containerId = isEdit 
-            ? `edit-${type}-measurements-container` 
-            : `${type}-measurements-container`;
+    // Function to add a new step
+    function addStep(isEdit = false) {
+        const containerId = isEdit ? 'edit-steps-container' : 'steps-container';
         const container = document.getElementById(containerId);
-        
-        let count;
-        if (isEdit) {
-            count = window[`edit${type}Count`]++;
-        } else {
-            count = window[`${type}Count`]++;
-        }
-        
-        let template = `
-            <div class="row ${type}-measurement mb-2" id="${type}-measurement-${isEdit ? `edit${count}` : count}">
-                <div class="col-md-4">
-                    <input type="text" class="form-control" name="${type}_param_name_${isEdit ? `edit${count}` : count}" placeholder="Parameter Name">
-                </div>
-                <div class="col-md-2">
-                    <input type="number" step="any" class="form-control" name="${type}_min_${isEdit ? `edit${count}` : count}" placeholder="Min">
-                </div>
-                <div class="col-md-2">
-                    <input type="number" step="any" class="form-control" name="${type}_max_${isEdit ? `edit${count}` : count}" placeholder="Max">
-                </div>
-                <div class="col-md-2">
-                    <select class="form-select" name="${type}_unit_${isEdit ? `edit${count}` : count}">
-                        ${type === 'voltage' ? `
-                            <option value="V">V</option>
-                            <option value="mV">mV</option>
-                            <option value="kV">kV</option>
-                        ` : type === 'current' ? `
-                            <option value="A">A</option>
-                            <option value="mA">mA</option>
-                            <option value="μA">μA</option>
-                        ` : type === 'resistance' ? `
-                            <option value="Ω">Ω</option>
-                            <option value="kΩ">kΩ</option>
-                            <option value="MΩ">MΩ</option>
-                        ` : `
-                            <option value="Hz">Hz</option>
-                            <option value="kHz">kHz</option>
-                            <option value="MHz">MHz</option>
-                            <option value="GHz">GHz</option>
-                        `}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, '${type}')">Remove</button>
-                </div>
-            </div>
-        `;
-        
-        container.innerHTML += template;
-    }
-
-    // Function to add a new question
-    function addQuestion(isEdit = false) {
-        const container = document.getElementById(isEdit ? 'edit-yesno-questions-container' : 'yesno-questions-container');
-        
-        let count;
-        if (isEdit) {
-            count = editQuestionCount++;
-        } else {
-            count = questionCount++;
-        }
+        const count = isEdit ? editStepCount++ : stepCount++;
         
         const template = `
-            <div class="row yesno-question mb-2" id="question-${count}">
-                <div class="col-md-8">
-                    <input type="text" class="form-control" name="question_text_${count}" placeholder="Question">
-                </div>
-                <div class="col-md-3">
-                    <select class="form-select" name="question_required_${count}">
-                        <option value="true">Expected: Yes</option>
-                        <option value="false">Expected: No</option>
-                    </select>
-                </div>
-                <div class="col-md-1">
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">Remove</button>
+            <div class="step mb-3 p-3 border rounded">
+                <div class="row">
+                    <div class="col-md-10">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <label class="form-label">Step Type</label>
+                                <select class="form-select step-type" name="step_type_${count}" onchange="updateStepFields(${count})">
+                                    <option value="">Select Type</option>
+                                    <option value="VOLTAGE">Voltage Measurement</option>
+                                    <option value="CURRENT">Current Measurement</option>
+                                    <option value="RESISTANCE">Resistance Measurement</option>
+                                    <option value="FREQUENCY">Frequency Measurement</option>
+                                    <option value="QUESTION">Yes/No Question</option>
+                                    <option value="INSTRUCTION">Instruction</option>
+                                </select>
+                            </div>
+                            <div class="col-md-10">
+                                <div class="step-fields-container" id="step-fields-${count}">
+                                    <p class="text-muted">Select a step type to configure fields</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-center">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStep(this)">Remove</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -548,17 +345,99 @@
         container.innerHTML += template;
     }
 
-    // Function to remove a measurement
-    function removeMeasurement(button, type) {
-        const measurementDiv = button.closest(`.${type}-measurement`);
-        measurementDiv.remove();
+    // Function to update fields based on step type
+    function updateStepFields(index) {
+        const stepType = document.querySelector(`select[name="step_type_${index}"]`).value;
+        const container = document.getElementById(`step-fields-${index}`);
+        
+        let template = '';
+        
+        if (stepType === 'VOLTAGE' || stepType === 'CURRENT' || stepType === 'RESISTANCE' || stepType === 'FREQUENCY') {
+            const label = stepType === 'VOLTAGE' ? 'Voltage' : 
+                         stepType === 'CURRENT' ? 'Current' : 
+                         stepType === 'RESISTANCE' ? 'Resistance' : 'Frequency';
+            const defaultUnit = stepType === 'VOLTAGE' ? 'V' : 
+                               stepType === 'CURRENT' ? 'A' : 
+                               stepType === 'RESISTANCE' ? 'Ω' : 'Hz';
+            
+            template = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">Parameter Name</label>
+                        <input type="text" class="form-control" name="${stepType.toLowerCase()}_param_name_${index}" placeholder="Parameter name (e.g. Supply Voltage)">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Min Value</label>
+                        <input type="number" step="any" class="form-control" name="${stepType.toLowerCase()}_min_${index}" placeholder="Min">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Max Value</label>
+                        <input type="number" step="any" class="form-control" name="${stepType.toLowerCase()}_max_${index}" placeholder="Max">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Unit</label>
+                        <select class="form-select" name="${stepType.toLowerCase()}_unit_${index}">
+                            <option value="${defaultUnit}" selected>${defaultUnit}</option>
+                            ${stepType === 'VOLTAGE' ? `
+                                <option value="mV">mV</option>
+                                <option value="kV">kV</option>
+                            ` : stepType === 'CURRENT' ? `
+                                <option value="mA">mA</option>
+                                <option value="μA">μA</option>
+                            ` : stepType === 'RESISTANCE' ? `
+                                <option value="kΩ">kΩ</option>
+                                <option value="MΩ">MΩ</option>
+                            ` : `
+                                <option value="kHz">kHz</option>
+                                <option value="MHz">MHz</option>
+                                <option value="GHz">GHz</option>
+                            `}
+                        </select>
+                    </div>
+                </div>
+            `;
+        } else if (stepType === 'QUESTION') {
+            template = `
+                <div class="row">
+                    <div class="col-md-8">
+                        <label class="form-label">Question</label>
+                        <input type="text" class="form-control" name="question_text_${index}" placeholder="Question for the user">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Expected Answer</label>
+                        <select class="form-select" name="question_required_${index}">
+                            <option value="true">Expected: Yes</option>
+                            <option value="false">Expected: No</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        } else if (stepType === 'INSTRUCTION') {
+            template = `
+                <div class="row">
+                    <div class="col-md-12">
+                        <label class="form-label">Instruction</label>
+                        <textarea class="form-control" name="instruction_text_${index}" placeholder="Provide instructions for the user" rows="2"></textarea>
+                    </div>
+                </div>
+            `;
+        } else {
+            template = '<p class="text-muted">Select a step type to configure fields</p>';
+        }
+        
+        container.innerHTML = template;
     }
 
-    // Function to remove a question
-    function removeQuestion(button) {
-        const questionDiv = button.closest('.yesno-question');
-        questionDiv.remove();
+    // Function to remove a step
+    function removeStep(button) {
+        const stepDiv = button.closest('.step');
+        stepDiv.remove();
     }
+
+    // Initialize the first step with proper field configuration
+    document.addEventListener('DOMContentLoaded', function() {
+        updateStepFields(0);
+    });
 
     // Edit Test Config Type functionality
     async function editTestConfigType(id) {
@@ -570,156 +449,35 @@
             document.getElementById('edit_name').value = data.name;
             document.getElementById('edit_description').value = data.description || '';
             
-            // Clear existing measurements
-            document.getElementById('edit-voltage-measurements-container').innerHTML = '';
-            document.getElementById('edit-current-measurements-container').innerHTML = '';
-            document.getElementById('edit-resistance-measurements-container').innerHTML = '';
-            document.getElementById('edit-frequency-measurements-container').innerHTML = '';
-            document.getElementById('edit-yesno-questions-container').innerHTML = '';
+            // Clear existing steps
+            document.getElementById('edit-steps-container').innerHTML = '';
             
-            // Add voltage measurements
-            if (data.voltage_measurements && data.voltage_measurements.length > 0) {
-                data.voltage_measurements.forEach((vm, index) => {
-                    const template = `
-                        <div class="row voltage-measurement mb-2">
-                            <div class="col-md-4">
-                                <input type="text" class="form-control" name="voltage_param_name_${index}" value="${vm.parameter_name}" placeholder="Parameter Name">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="number" step="any" class="form-control" name="voltage_min_${index}" value="${vm.min_value}" placeholder="Min">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="number" step="any" class="form-control" name="voltage_max_${index}" value="${vm.max_value}" placeholder="Max">
-                            </div>
-                            <div class="col-md-2">
-                                <select class="form-select" name="voltage_unit_${index}">
-                                    <option value="V" ${vm.unit === 'V' ? 'selected' : ''}>V</option>
-                                    <option value="mV" ${vm.unit === 'mV' ? 'selected' : ''}>mV</option>
-                                    <option value="kV" ${vm.unit === 'kV' ? 'selected' : ''}>kV</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'voltage')">Remove</button>
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('edit-voltage-measurements-container').innerHTML += template;
-                });
-            }
-            
-            // Add current measurements
-            if (data.current_measurements && data.current_measurements.length > 0) {
-                data.current_measurements.forEach((cm, index) => {
-                    const template = `
-                        <div class="row current-measurement mb-2">
-                            <div class="col-md-4">
-                                <input type="text" class="form-control" name="current_param_name_${index}" value="${cm.parameter_name}" placeholder="Parameter Name">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="number" step="any" class="form-control" name="current_min_${index}" value="${cm.min_value}" placeholder="Min">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="number" step="any" class="form-control" name="current_max_${index}" value="${cm.max_value}" placeholder="Max">
-                            </div>
-                            <div class="col-md-2">
-                                <select class="form-select" name="current_unit_${index}">
-                                    <option value="A" ${cm.unit === 'A' ? 'selected' : ''}>A</option>
-                                    <option value="mA" ${cm.unit === 'mA' ? 'selected' : ''}>mA</option>
-                                    <option value="μA" ${cm.unit === 'μA' ? 'selected' : ''}>μA</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'current')">Remove</button>
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('edit-current-measurements-container').innerHTML += template;
-                });
-            }
-            
-            // Add yes/no questions
-            if (data.yes_no_questions && data.yes_no_questions.length > 0) {
-                data.yes_no_questions.forEach((qn, index) => {
-                    const template = `
-                        <div class="row yesno-question mb-2">
-                            <div class="col-md-8">
-                                <input type="text" class="form-control" name="question_text_${index}" value="${qn.question_text}" placeholder="Question">
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select" name="question_required_${index}">
-                                    <option value="true" ${qn.required_answer ? 'selected' : ''}>Expected: Yes</option>
-                                    <option value="false" ${!qn.required_answer ? 'selected' : ''}>Expected: No</option>
-                                </select>
-                            </div>
-                            <div class="col-md-1">
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">Remove</button>
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('edit-yesno-questions-container').innerHTML += template;
-                });
-            }
-            
-            // Add resistance measurements
-            if (data.resistance_measurements && data.resistance_measurements.length > 0) {
-                data.resistance_measurements.forEach((rm, index) => {
-                    const template = `
-                        <div class="row resistance-measurement mb-2">
-                            <div class="col-md-4">
-                                <input type="text" class="form-control" name="resistance_param_name_${index}" value="${rm.parameter_name}" placeholder="Parameter Name">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="number" step="any" class="form-control" name="resistance_min_${index}" value="${rm.min_value}" placeholder="Min">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="number" step="any" class="form-control" name="resistance_max_${index}" value="${rm.max_value}" placeholder="Max">
-                            </div>
-                            <div class="col-md-2">
-                                <select class="form-select" name="resistance_unit_${index}">
-                                    <option value="Ω" ${rm.unit === 'Ω' ? 'selected' : ''}>Ω</option>
-                                    <option value="kΩ" ${rm.unit === 'kΩ' ? 'selected' : ''}>kΩ</option>
-                                    <option value="MΩ" ${rm.unit === 'MΩ' ? 'selected' : ''}>MΩ</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'resistance')">Remove</button>
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('edit-resistance-measurements-container').innerHTML += template;
-                });
-            }
-            
-            // Add frequency measurements
-            if (data.frequency_measurements && data.frequency_measurements.length > 0) {
-                data.frequency_measurements.forEach((fm, index) => {
-                    const template = `
-                        <div class="row frequency-measurement mb-2">
-                            <div class="col-md-4">
-                                <input type="text" class="form-control" name="frequency_param_name_${index}" value="${fm.parameter_name}" placeholder="Parameter Name">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="number" step="any" class="form-control" name="frequency_min_${index}" value="${fm.min_value}" placeholder="Min">
-                            </div>
-                            <div class="col-md-2">
-                                <input type="number" step="any" class="form-control" name="frequency_max_${index}" value="${fm.max_value}" placeholder="Max">
-                            </div>
-                            <div class="col-md-2">
-                                <select class="form-select" name="frequency_unit_${index}">
-                                    <option value="Hz" ${fm.unit === 'Hz' ? 'selected' : ''}>Hz</option>
-                                    <option value="kHz" ${fm.unit === 'kHz' ? 'selected' : ''}>kHz</option>
-                                    <option value="MHz" ${fm.unit === 'MHz' ? 'selected' : ''}>MHz</option>
-                                    <option value="GHz" ${fm.unit === 'GHz' ? 'selected' : ''}>GHz</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'frequency')">Remove</button>
-                            </div>
-                        </div>
-                    `;
-                    document.getElementById('edit-frequency-measurements-container').innerHTML += template;
-                });
-            }
+            // Add steps from the data
+            data.steps.sort((a, b) => a.order - b.order);  // Sort by order
+            data.steps.forEach((step, index) => {
+                addStep(true);  // Add an empty step first
+                
+                // Set the step type
+                const stepTypeSelect = document.querySelector(`select[name="step_type_${index}"]`);
+                if (stepTypeSelect) {
+                    stepTypeSelect.value = step.step_type;
+                    updateStepFields(index);  // Update fields based on type
+                    
+                    // Then populate the specific fields
+                    if (['VOLTAGE', 'CURRENT', 'RESISTANCE', 'FREQUENCY'].includes(step.step_type)) {
+                        const prefix = step.step_type.toLowerCase();
+                        document.querySelector(`input[name="${prefix}_param_name_${index}"]`).value = step.parameter_name || '';
+                        document.querySelector(`input[name="${prefix}_min_${index}"]`).value = step.min_value || '';
+                        document.querySelector(`input[name="${prefix}_max_${index}"]`).value = step.max_value || '';
+                        document.querySelector(`select[name="${prefix}_unit_${index}"]`).value = step.unit || '';
+                    } else if (step.step_type === 'QUESTION') {
+                        document.querySelector(`input[name="question_text_${index}"]`).value = step.question_text || '';
+                        document.querySelector(`select[name="question_required_${index}"]`).value = step.required_answer ? 'true' : 'false';
+                    } else if (step.step_type === 'INSTRUCTION') {
+                        document.querySelector(`textarea[name="instruction_text_${index}"]`).value = step.instruction_text || '';
+                    }
+                }
+            });
             
             // Update the form action to point to the correct URL
             document.getElementById('editTestConfigTypeForm').action = `/test_config_type/update/${id}/`;
@@ -750,22 +508,6 @@
     }
     
     // Handle delete confirmation input
-    document.getElementById('confirmDeleteName').addEventListener('input', function() {
-        const inputName = this.value;
-        const expectedName = document.getElementById('testConfigTypeNameToDelete').textContent;
-        const mismatchElement = document.getElementById('deleteNameMismatch');
-        const confirmBtn = document.getElementById('confirmDeleteBtn');
-        
-        if (inputName === expectedName) {
-            mismatchElement.style.display = 'none';
-            confirmBtn.disabled = true;  // Keep disabled until we fix the count logic
-        } else {
-            mismatchElement.style.display = 'block';
-            confirmBtn.disabled = true;
-        }
-    });
-    
-    // Update count for delete confirmation
     document.getElementById('confirmDeleteName').addEventListener('input', function() {
         const inputName = this.value;
         const expectedName = document.getElementById('testConfigTypeNameToDelete').textContent;
