@@ -231,11 +231,12 @@
 
 {% block extra_js %}
 <script>
-    let voltageCount = 1;
-    let currentCount = 1;
-    let resistanceCount = 1;
-    let frequencyCount = 1;
-    let questionCount = 1;
+    // Define counters for each type of measurement/question (for edit mode)
+    let editVoltageCount = 0;
+    let editCurrentCount = 0;
+    let editResistanceCount = 0;
+    let editFrequencyCount = 0;
+    let editQuestionCount = 0;
 
     // Function to add a new measurement
     function addMeasurement(type, isEdit = false) {
@@ -244,68 +245,51 @@
             : `${type}-measurements-container`;
         const container = document.getElementById(containerId);
         
-        let template = '';
-        if (type === 'voltage') {
-            template = `
-                <div class="row ${type}-measurement mb-2" id="${type}-measurement-${isEdit ? `edit${typeCount}` : window[`${type}Count`]}">
-                    <div class="col-md-4">
-                        <input type="text" class="form-control" name="${type}_param_name_${isEdit ? `edit${typeCount++}` : window[`${type}Count`]++}" placeholder="Parameter Name">
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" step="any" class="form-control" name="${type}_min_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}" placeholder="Min">
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" step="any" class="form-control" name="${type}_max_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}" placeholder="Max">
-                    </div>
-                    <div class="col-md-2">
-                        <select class="form-select" name="${type}_unit_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}">
+        let count;
+        if (isEdit) {
+            count = window[`edit${type}Count`]++;
+        } else {
+            count = window[`${type}Count`]++;
+        }
+        
+        let template = `
+            <div class="row ${type}-measurement mb-2" id="${type}-measurement-${isEdit ? `edit${count}` : count}">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="${type}_param_name_${isEdit ? `edit${count}` : count}" placeholder="Parameter Name">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" step="any" class="form-control" name="${type}_min_${isEdit ? `edit${count}` : count}" placeholder="Min">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" step="any" class="form-control" name="${type}_max_${isEdit ? `edit${count}` : count}" placeholder="Max">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="${type}_unit_${isEdit ? `edit${count}` : count}">
+                        ${type === 'voltage' ? `
                             <option value="V">V</option>
                             <option value="mV">mV</option>
                             <option value="kV">kV</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, '${type}')">Remove</button>
-                    </div>
+                        ` : type === 'current' ? `
+                            <option value="A">A</option>
+                            <option value="mA">mA</option>
+                            <option value="μA">μA</option>
+                        ` : type === 'resistance' ? `
+                            <option value="Ω">Ω</option>
+                            <option value="kΩ">kΩ</option>
+                            <option value="MΩ">MΩ</option>
+                        ` : `
+                            <option value="Hz">Hz</option>
+                            <option value="kHz">kHz</option>
+                            <option value="MHz">MHz</option>
+                            <option value="GHz">GHz</option>
+                        `}
+                    </select>
                 </div>
-            `;
-        } else {
-            // Other types have similar structure
-            template = `
-                <div class="row ${type}-measurement mb-2" id="${type}-measurement-${isEdit ? `edit${typeCount}` : window[`${type}Count`]}">
-                    <div class="col-md-4">
-                        <input type="text" class="form-control" name="${type}_param_name_${isEdit ? `edit${typeCount++}` : window[`${type}Count`]++}" placeholder="Parameter Name">
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" step="any" class="form-control" name="${type}_min_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}" placeholder="Min">
-                    </div>
-                    <div class="col-md-2">
-                        <input type="number" step="any" class="form-control" name="${type}_max_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}" placeholder="Max">
-                    </div>
-                    <div class="col-md-2">
-                        <select class="form-select" name="${type}_unit_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}">
-                            ${type === 'current' ? `
-                                <option value="A">A</option>
-                                <option value="mA">mA</option>
-                                <option value="μA">μA</option>
-                            ` : type === 'resistance' ? `
-                                <option value="Ω">Ω</option>
-                                <option value="kΩ">kΩ</option>
-                                <option value="MΩ">MΩ</option>
-                            ` : `
-                                <option value="Hz">Hz</option>
-                                <option value="kHz">kHz</option>
-                                <option value="MHz">MHz</option>
-                                <option value="GHz">GHz</option>
-                            `}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, '${type}')">Remove</button>
-                    </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, '${type}')">Remove</button>
                 </div>
-            `;
-        }
+            </div>
+        `;
         
         container.innerHTML += template;
     }
@@ -313,7 +297,13 @@
     // Function to add a new question
     function addQuestion(isEdit = false) {
         const container = document.getElementById(isEdit ? 'edit-yesno-questions-container' : 'yesno-questions-container');
-        const count = isEdit ? `edit${questionCount++}` : questionCount++;
+        
+        let count;
+        if (isEdit) {
+            count = editQuestionCount++;
+        } else {
+            count = questionCount++;
+        }
         
         const template = `
             <div class="row yesno-question mb-2" id="question-${count}">
