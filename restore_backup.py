@@ -14,13 +14,13 @@ django.setup()
 def restore_db_from_backup(backup_file):
     """Restore the database from a backup file"""
     try:
-        # Flush the database (be careful! This deletes all data)
-        # management.call_command('flush', interactive=False)
+        # First, flush the database to remove all existing data
+        management.call_command('flush', interactive=False)
         
         # Load the data from the backup file
         management.call_command('loaddata', backup_file)
         
-        print(f"Database restored from: {backup_file}")
+        print(f"Database successfully restored from: {backup_file}")
     except Exception as e:
         print(f"Error restoring database: {e}")
 
