@@ -15,7 +15,7 @@
 </head>
 <body>
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="{% url 'home' %}">
                 <i class="bi bi-clipboard-data"></i> ModuleTrack
@@ -45,7 +45,7 @@
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Hello, {{ user.username }}!</a>
+                            <span class="navbar-text">Hello, {{ user.username }}!</span>
                         </li>
                         {% if user.is_superuser %}
                             <li class="nav-item">
