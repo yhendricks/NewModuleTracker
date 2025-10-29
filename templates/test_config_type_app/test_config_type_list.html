@@ -205,13 +205,6 @@
                                                 onclick="viewTestConfigType({{ test_config.id }})">
                                             <i class="bi bi-eye"></i>
                                         </button>
-                                        {% if perms.test_config_type_app.change_testconfigtype %}
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                                    onclick="editTestConfigType({{ test_config.id }})"
-                                                    data-bs-toggle="modal" data-bs-target="#editTestConfigTypeModal">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                        {% endif %}
                                         {% if perms.test_config_type_app.delete_testconfigtype %}
                                             <button type="button" class="btn btn-sm btn-outline-danger" 
                                                     onclick="deleteTestConfigType({{ test_config.id }}, '{{ test_config.name|escapejs }}')"
