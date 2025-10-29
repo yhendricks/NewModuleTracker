@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'moduletrack',  # Main app for signals
     'pcb_type_app',  # Custom app
     'django_htmx',  # HTMX support
 ]
@@ -138,3 +139,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DB_PATH = BASE_DIR / 'db'
 if not os.path.exists(DB_PATH):
     os.makedirs(DB_PATH)
+
+# Redirect after login
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
