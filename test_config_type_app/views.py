@@ -176,108 +176,118 @@ def test_config_type_detail(request, pk):
 
 def create_associated_measurements(test_config, post_data):
     """Helper function to create associated measurements and questions from POST data"""
-    # Process voltage measurements
-    voltage_count = int(post_data.get('voltage_count', 0))
-    for i in range(voltage_count):
-        param_name = post_data.get(f'voltage_param_name_{i}')
-        min_val = post_data.get(f'voltage_min_{i}')
-        max_val = post_data.get(f'voltage_max_{i}')
-        unit = post_data.get(f'voltage_unit_{i}', 'V')
-        
-        if param_name and min_val is not None and max_val is not None:
-            try:
-                min_val = float(min_val)
-                max_val = float(max_val)
-                VoltageMeasurement.objects.create(
-                    test_config=test_config,
-                    parameter_name=param_name,
-                    min_value=min_val,
-                    max_value=max_val,
-                    unit=unit
-                )
-            except ValueError:
-                # Skip invalid values
-                pass
+    # Process all form fields to find voltage measurements
+    for key in post_data.keys():
+        if key.startswith('voltage_param_name_'):
+            # Extract the index from the key
+            index = key.split('_')[-1]
+            param_name = post_data.get(f'voltage_param_name_{index}')
+            min_val = post_data.get(f'voltage_min_{index}')
+            max_val = post_data.get(f'voltage_max_{index}')
+            unit = post_data.get(f'voltage_unit_{index}', 'V')
+            
+            if param_name and min_val not in [None, ''] and max_val not in [None, '']:
+                try:
+                    min_val = float(min_val)
+                    max_val = float(max_val)
+                    VoltageMeasurement.objects.create(
+                        test_config=test_config,
+                        parameter_name=param_name,
+                        min_value=min_val,
+                        max_value=max_val,
+                        unit=unit
+                    )
+                except ValueError:
+                    # Skip invalid values
+                    pass
 
-    # Process current measurements
-    current_count = int(post_data.get('current_count', 0))
-    for i in range(current_count):
-        param_name = post_data.get(f'current_param_name_{i}')
-        min_val = post_data.get(f'current_min_{i}')
-        max_val = post_data.get(f'current_max_{i}')
-        unit = post_data.get(f'current_unit_{i}', 'A')
-        
-        if param_name and min_val is not None and max_val is not None:
-            try:
-                min_val = float(min_val)
-                max_val = float(max_val)
-                CurrentMeasurement.objects.create(
-                    test_config=test_config,
-                    parameter_name=param_name,
-                    min_value=min_val,
-                    max_value=max_val,
-                    unit=unit
-                )
-            except ValueError:
-                # Skip invalid values
-                pass
+    # Process all form fields to find current measurements
+    for key in post_data.keys():
+        if key.startswith('current_param_name_'):
+            # Extract the index from the key
+            index = key.split('_')[-1]
+            param_name = post_data.get(f'current_param_name_{index}')
+            min_val = post_data.get(f'current_min_{index}')
+            max_val = post_data.get(f'current_max_{index}')
+            unit = post_data.get(f'current_unit_{index}', 'A')
+            
+            if param_name and min_val not in [None, ''] and max_val not in [None, '']:
+                try:
+                    min_val = float(min_val)
+                    max_val = float(max_val)
+                    CurrentMeasurement.objects.create(
+                        test_config=test_config,
+                        parameter_name=param_name,
+                        min_value=min_val,
+                        max_value=max_val,
+                        unit=unit
+                    )
+                except ValueError:
+                    # Skip invalid values
+                    pass
 
-    # Process yes/no questions
-    question_count = int(post_data.get('question_count', 0))
-    for i in range(question_count):
-        question_text = post_data.get(f'question_text_{i}')
-        required_answer = post_data.get(f'question_required_{i}')
-        
-        if question_text and required_answer is not None:
-            required_bool = required_answer == 'true' or required_answer == 'True' or required_answer == '1'
-            YesNoQuestion.objects.create(
-                test_config=test_config,
-                question_text=question_text,
-                required_answer=required_bool
-            )
-
-    # Process resistance measurements
-    resistance_count = int(post_data.get('resistance_count', 0))
-    for i in range(resistance_count):
-        param_name = post_data.get(f'resistance_param_name_{i}')
-        min_val = post_data.get(f'resistance_min_{i}')
-        max_val = post_data.get(f'resistance_max_{i}')
-        unit = post_data.get(f'resistance_unit_{i}', 'Ω')
-        
-        if param_name and min_val is not None and max_val is not None:
-            try:
-                min_val = float(min_val)
-                max_val = float(max_val)
-                ResistanceMeasurement.objects.create(
+    # Process all form fields to find yes/no questions
+    for key in post_data.keys():
+        if key.startswith('question_text_'):
+            # Extract the index from the key
+            index = key.split('_')[-1]
+            question_text = post_data.get(f'question_text_{index}')
+            required_answer = post_data.get(f'question_required_{index}')
+            
+            if question_text and required_answer:
+                required_bool = required_answer == 'true' or required_answer == 'True' or required_answer == '1'
+                YesNoQuestion.objects.create(
                     test_config=test_config,
-                    parameter_name=param_name,
-                    min_value=min_val,
-                    max_value=max_val,
-                    unit=unit
+                    question_text=question_text,
+                    required_answer=required_bool
                 )
-            except ValueError:
-                # Skip invalid values
-                pass
 
-    # Process frequency measurements
-    frequency_count = int(post_data.get('frequency_count', 0))
-    for i in range(frequency_count):
-        param_name = post_data.get(f'frequency_param_name_{i}')
-        min_val = post_data.get(f'frequency_min_{i}')
-        max_val = post_data.get(f'frequency_max_{i}')
-        unit = post_data.get(f'frequency_unit_{i}', 'Hz')
-        
-        if param_name and min_val is not None and max_val is not None:
-            try:
-                min_val = float(min_val)
-                max_val = float(max_val)
-                FrequencyMeasurement.objects.create(
-                    test_config=test_config,
-                    parameter_name=param_name,
-                    min_value=min_val,
-                    max_value=max_val,
-                    unit=unit
-                )
-            except ValueError:
-                # Skip invalid values
-                pass
+    # Process all form fields to find resistance measurements
+    for key in post_data.keys():
+        if key.startswith('resistance_param_name_'):
+            # Extract the index from the key
+            index = key.split('_')[-1]
+            param_name = post_data.get(f'resistance_param_name_{index}')
+            min_val = post_data.get(f'resistance_min_{index}')
+            max_val = post_data.get(f'resistance_max_{index}')
+            unit = post_data.get(f'resistance_unit_{index}', 'Ω')
+            
+            if param_name and min_val not in [None, ''] and max_val not in [None, '']:
+                try:
+                    min_val = float(min_val)
+                    max_val = float(max_val)
+                    ResistanceMeasurement.objects.create(
+                        test_config=test_config,
+                        parameter_name=param_name,
+                        min_value=min_val,
+                        max_value=max_val,
+                        unit=unit
+                    )
+                except ValueError:
+                    # Skip invalid values
+                    pass
+
+    # Process all form fields to find frequency measurements
+    for key in post_data.keys():
+        if key.startswith('frequency_param_name_'):
+            # Extract the index from the key
+            index = key.split('_')[-1]
+            param_name = post_data.get(f'frequency_param_name_{index}')
+            min_val = post_data.get(f'frequency_min_{index}')
+            max_val = post_data.get(f'frequency_max_{index}')
+            unit = post_data.get(f'frequency_unit_{index}', 'Hz')
+            
+            if param_name and min_val not in [None, ''] and max_val not in [None, '']:
+                try:
+                    min_val = float(min_val)
+                    max_val = float(max_val)
+                    FrequencyMeasurement.objects.create(
+                        test_config=test_config,
+                        parameter_name=param_name,
+                        min_value=min_val,
+                        max_value=max_val,
+                        unit=unit
+                    )
+                except ValueError:
+                    # Skip invalid values
+                    pass
