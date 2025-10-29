@@ -18,8 +18,11 @@ def create_db_backup():
     try:
         # Create timestamped backup filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'db_backup')
+        backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'db_backup')
         backup_file = os.path.join(backup_dir, f"db_backup_{timestamp}.json")
+        
+        # Ensure the backup directory exists
+        os.makedirs(backup_dir, exist_ok=True)
         
         # Run Django's dumpdata command
         management.call_command('dumpdata', 
