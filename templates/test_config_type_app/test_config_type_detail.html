@@ -191,7 +191,7 @@
             </div>
         `;
         
-        container.innerHTML += template;
+        container.insertAdjacentHTML('beforeend', template);
     }
 
     // Function to update fields based on step type
@@ -338,7 +338,7 @@
                     </div>
                 `;
                 
-                container.innerHTML += template;
+                container.insertAdjacentHTML('beforeend', template);
                 
                 // Set the step type
                 const stepTypeSelect = document.querySelector(`select[name="step_type_${count}"]`);
