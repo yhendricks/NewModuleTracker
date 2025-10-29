@@ -1,0 +1,549 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ test_config.name }} - Test Config Type Detail{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Test Config Type Details</h2>
+    <a href="{% url 'test_config_type_list' %}" class="btn btn-secondary">Back to List</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">{{ test_config.name }}</h5>
+        <p class="card-text">
+            <strong>Description:</strong> {{ test_config.description|default:"No description provided" }}
+        </p>
+        <p class="card-text">
+            <small class="text-muted">
+                Created: {{ test_config.created_at|date:"F d, Y H:i" }} | 
+                Updated: {{ test_config.updated_at|date:"F d, Y H:i" }}
+            </small>
+        </p>
+    </div>
+</div>
+
+<!-- Voltage Measurements -->
+{% if test_config.voltage_measurements.all %}
+<div class="card mt-3">
+    <div class="card-header">
+        <h5 class="card-title">Voltage Measurements</h5>
+    </div>
+    <div class="card-body">
+        {% for measurement in test_config.voltage_measurements.all %}
+        <div class="row border-bottom py-2">
+            <div class="col-md-4"><strong>{{ measurement.parameter_name }}</strong></div>
+            <div class="col-md-4">{{ measurement.min_value }}{{ measurement.unit }} - {{ measurement.max_value }}{{ measurement.unit }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Current Measurements -->
+{% if test_config.current_measurements.all %}
+<div class="card mt-3">
+    <div class="card-header">
+        <h5 class="card-title">Current Measurements</h5>
+    </div>
+    <div class="card-body">
+        {% for measurement in test_config.current_measurements.all %}
+        <div class="row border-bottom py-2">
+            <div class="col-md-4"><strong>{{ measurement.parameter_name }}</strong></div>
+            <div class="col-md-4">{{ measurement.min_value }}{{ measurement.unit }} - {{ measurement.max_value }}{{ measurement.unit }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Yes/No Questions -->
+{% if test_config.yes_no_questions.all %}
+<div class="card mt-3">
+    <div class="card-header">
+        <h5 class="card-title">Yes/No Questions</h5>
+    </div>
+    <div class="card-body">
+        {% for question in test_config.yes_no_questions.all %}
+        <div class="row border-bottom py-2">
+            <div class="col-md-8"><strong>{{ question.question_text }}</strong></div>
+            <div class="col-md-4">Expected Answer: <span class="badge bg-{{ question.required_answer|yesno:'success,danger' }}">{{ question.required_answer|yesno:'Yes,No' }}</span></div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Resistance Measurements -->
+{% if test_config.resistance_measurements.all %}
+<div class="card mt-3">
+    <div class="card-header">
+        <h5 class="card-title">Resistance Measurements</h5>
+    </div>
+    <div class="card-body">
+        {% for measurement in test_config.resistance_measurements.all %}
+        <div class="row border-bottom py-2">
+            <div class="col-md-4"><strong>{{ measurement.parameter_name }}</strong></div>
+            <div class="col-md-4">{{ measurement.min_value }}{{ measurement.unit }} - {{ measurement.max_value }}{{ measurement.unit }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Frequency Measurements -->
+{% if test_config.frequency_measurements.all %}
+<div class="card mt-3">
+    <div class="card-header">
+        <h5 class="card-title">Frequency Measurements</h5>
+    </div>
+    <div class="card-body">
+        {% for measurement in test_config.frequency_measurements.all %}
+        <div class="row border-bottom py-2">
+            <div class="col-md-4"><strong>{{ measurement.parameter_name }}</strong></div>
+            <div class="col-md-4">{{ measurement.min_value }}{{ measurement.unit }} - {{ measurement.max_value }}{{ measurement.unit }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<div class="mt-3">
+    {% if perms.test_config_type_app.change_testconfigtype %}
+        <a href="#" class="btn btn-primary" onclick="editTestConfigType({{ test_config.id }})" data-bs-toggle="modal" data-bs-target="#editTestConfigTypeModal">Edit</a>
+    {% endif %}
+    {% if perms.test_config_type_app.delete_testconfigtype %}
+        <button type="button" class="btn btn-danger" onclick="deleteTestConfigType({{ test_config.id }}, '{{ test_config.name|escapejs }}')" data-bs-toggle="modal" data-bs-target="#deleteTestConfigTypeModal">Delete</button>
+    {% endif %}
+</div>
+
+<!-- Edit and Delete Modals (for direct access from detail page) -->
+{% if perms.test_config_type_app.change_testconfigtype %}
+<div class="modal fade" id="editTestConfigTypeModal" tabindex="-1" aria-labelledby="editTestConfigTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTestConfigTypeModalLabel">Edit Test Config Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editTestConfigTypeForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="id">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <!-- Measurements Section -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <strong>Measurements</strong>
+                        </div>
+                        <div class="card-body">
+                            <!-- Voltage Measurements -->
+                            <h6 class="mb-3">Voltage Measurements</h6>
+                            <div id="edit-voltage-measurements-container">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('voltage', true)">Add Voltage Measurement</button>
+                            
+                            <!-- Current Measurements -->
+                            <h6 class="mb-3 mt-3">Current Measurements</h6>
+                            <div id="edit-current-measurements-container">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('current', true)">Add Current Measurement</button>
+                            
+                            <!-- Resistance Measurements -->
+                            <h6 class="mb-3 mt-3">Resistance Measurements</h6>
+                            <div id="edit-resistance-measurements-container">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('resistance', true)">Add Resistance Measurement</button>
+                            
+                            <!-- Frequency Measurements -->
+                            <h6 class="mb-3 mt-3">Frequency Measurements</h6>
+                            <div id="edit-frequency-measurements-container">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addMeasurement('frequency', true)">Add Frequency Measurement</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Yes/No Questions Section -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <strong>Yes/No Questions</strong>
+                        </div>
+                        <div class="card-body">
+                            <div id="edit-yesno-questions-container">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="addQuestion(true)">Add Question</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Test Config Type</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+{% if perms.test_config_type_app.delete_testconfigtype %}
+<div class="modal fade" id="deleteTestConfigTypeModal" tabindex="-1" aria-labelledby="deleteTestConfigTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTestConfigTypeModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="deleteTestConfigTypeForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="delete_id" name="id">
+                    <p>Are you sure you want to delete the Test Config Type "<strong id="testConfigTypeNameToDelete"></strong>"?</p>
+                    <p class="text-danger">This action cannot be undone.</p>
+                    <p>Please type the exact name of the Test Config Type to confirm deletion:</p>
+                    <input type="text" class="form-control" id="confirmDeleteName" name="confirm_name" placeholder="Type the name here..." required>
+                    <div id="deleteNameMismatch" class="text-danger mt-2" style="display:none;">Name does not match!</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let voltageCount = 1;
+    let currentCount = 1;
+    let resistanceCount = 1;
+    let frequencyCount = 1;
+    let questionCount = 1;
+
+    // Function to add a new measurement
+    function addMeasurement(type, isEdit = false) {
+        const containerId = isEdit 
+            ? `edit-${type}-measurements-container` 
+            : `${type}-measurements-container`;
+        const container = document.getElementById(containerId);
+        
+        let template = '';
+        if (type === 'voltage') {
+            template = `
+                <div class="row ${type}-measurement mb-2" id="${type}-measurement-${isEdit ? `edit${typeCount}` : window[`${type}Count`]}">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="${type}_param_name_${isEdit ? `edit${typeCount++}` : window[`${type}Count`]++}" placeholder="Parameter Name">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" step="any" class="form-control" name="${type}_min_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}" placeholder="Min">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" step="any" class="form-control" name="${type}_max_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}" placeholder="Max">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="${type}_unit_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}">
+                            <option value="V">V</option>
+                            <option value="mV">mV</option>
+                            <option value="kV">kV</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, '${type}')">Remove</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Other types have similar structure
+            template = `
+                <div class="row ${type}-measurement mb-2" id="${type}-measurement-${isEdit ? `edit${typeCount}` : window[`${type}Count`]}">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="${type}_param_name_${isEdit ? `edit${typeCount++}` : window[`${type}Count`]++}" placeholder="Parameter Name">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" step="any" class="form-control" name="${type}_min_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}" placeholder="Min">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="number" step="any" class="form-control" name="${type}_max_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}" placeholder="Max">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="${type}_unit_${isEdit ? `edit${typeCount-1}` : window[`${type}Count`]-1}">
+                            ${type === 'current' ? `
+                                <option value="A">A</option>
+                                <option value="mA">mA</option>
+                                <option value="μA">μA</option>
+                            ` : type === 'resistance' ? `
+                                <option value="Ω">Ω</option>
+                                <option value="kΩ">kΩ</option>
+                                <option value="MΩ">MΩ</option>
+                            ` : `
+                                <option value="Hz">Hz</option>
+                                <option value="kHz">kHz</option>
+                                <option value="MHz">MHz</option>
+                                <option value="GHz">GHz</option>
+                            `}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, '${type}')">Remove</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        container.innerHTML += template;
+    }
+
+    // Function to add a new question
+    function addQuestion(isEdit = false) {
+        const container = document.getElementById(isEdit ? 'edit-yesno-questions-container' : 'yesno-questions-container');
+        const count = isEdit ? `edit${questionCount++}` : questionCount++;
+        
+        const template = `
+            <div class="row yesno-question mb-2" id="question-${count}">
+                <div class="col-md-8">
+                    <input type="text" class="form-control" name="question_text_${count}" placeholder="Question">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="question_required_${count}">
+                        <option value="true">Expected: Yes</option>
+                        <option value="false">Expected: No</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">Remove</button>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML += template;
+    }
+
+    // Function to remove a measurement
+    function removeMeasurement(button, type) {
+        const measurementDiv = button.closest(`.${type}-measurement`);
+        measurementDiv.remove();
+    }
+
+    // Function to remove a question
+    function removeQuestion(button) {
+        const questionDiv = button.closest('.yesno-question');
+        questionDiv.remove();
+    }
+
+    // Edit Test Config Type functionality
+    async function editTestConfigType(id) {
+        try {
+            const response = await fetch(`/test_config_type/update/${id}/?format=json`);
+            const data = await response.json();
+            
+            document.getElementById('edit_id').value = data.id;
+            document.getElementById('edit_name').value = data.name;
+            document.getElementById('edit_description').value = data.description || '';
+            
+            // Clear existing measurements
+            document.getElementById('edit-voltage-measurements-container').innerHTML = '';
+            document.getElementById('edit-current-measurements-container').innerHTML = '';
+            document.getElementById('edit-resistance-measurements-container').innerHTML = '';
+            document.getElementById('edit-frequency-measurements-container').innerHTML = '';
+            document.getElementById('edit-yesno-questions-container').innerHTML = '';
+            
+            // Add voltage measurements
+            if (data.voltage_measurements && data.voltage_measurements.length > 0) {
+                data.voltage_measurements.forEach((vm, index) => {
+                    const template = `
+                        <div class="row voltage-measurement mb-2">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" name="voltage_param_name_${index}" value="${vm.parameter_name}" placeholder="Parameter Name">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" step="any" class="form-control" name="voltage_min_${index}" value="${vm.min_value}" placeholder="Min">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" step="any" class="form-control" name="voltage_max_${index}" value="${vm.max_value}" placeholder="Max">
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" name="voltage_unit_${index}">
+                                    <option value="V" ${vm.unit === 'V' ? 'selected' : ''}>V</option>
+                                    <option value="mV" ${vm.unit === 'mV' ? 'selected' : ''}>mV</option>
+                                    <option value="kV" ${vm.unit === 'kV' ? 'selected' : ''}>kV</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'voltage')">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('edit-voltage-measurements-container').innerHTML += template;
+                });
+            }
+            
+            // Add current measurements
+            if (data.current_measurements && data.current_measurements.length > 0) {
+                data.current_measurements.forEach((cm, index) => {
+                    const template = `
+                        <div class="row current-measurement mb-2">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" name="current_param_name_${index}" value="${cm.parameter_name}" placeholder="Parameter Name">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" step="any" class="form-control" name="current_min_${index}" value="${cm.min_value}" placeholder="Min">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" step="any" class="form-control" name="current_max_${index}" value="${cm.max_value}" placeholder="Max">
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" name="current_unit_${index}">
+                                    <option value="A" ${cm.unit === 'A' ? 'selected' : ''}>A</option>
+                                    <option value="mA" ${cm.unit === 'mA' ? 'selected' : ''}>mA</option>
+                                    <option value="μA" ${cm.unit === 'μA' ? 'selected' : ''}>μA</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'current')">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('edit-current-measurements-container').innerHTML += template;
+                });
+            }
+            
+            // Add yes/no questions
+            if (data.yes_no_questions && data.yes_no_questions.length > 0) {
+                data.yes_no_questions.forEach((qn, index) => {
+                    const template = `
+                        <div class="row yesno-question mb-2">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" name="question_text_${index}" value="${qn.question_text}" placeholder="Question">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" name="question_required_${index}">
+                                    <option value="true" ${qn.required_answer ? 'selected' : ''}>Expected: Yes</option>
+                                    <option value="false" ${!qn.required_answer ? 'selected' : ''}>Expected: No</option>
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeQuestion(this)">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('edit-yesno-questions-container').innerHTML += template;
+                });
+            }
+            
+            // Add resistance measurements
+            if (data.resistance_measurements && data.resistance_measurements.length > 0) {
+                data.resistance_measurements.forEach((rm, index) => {
+                    const template = `
+                        <div class="row resistance-measurement mb-2">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" name="resistance_param_name_${index}" value="${rm.parameter_name}" placeholder="Parameter Name">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" step="any" class="form-control" name="resistance_min_${index}" value="${rm.min_value}" placeholder="Min">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" step="any" class="form-control" name="resistance_max_${index}" value="${rm.max_value}" placeholder="Max">
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" name="resistance_unit_${index}">
+                                    <option value="Ω" ${rm.unit === 'Ω' ? 'selected' : ''}>Ω</option>
+                                    <option value="kΩ" ${rm.unit === 'kΩ' ? 'selected' : ''}>kΩ</option>
+                                    <option value="MΩ" ${rm.unit === 'MΩ' ? 'selected' : ''}>MΩ</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'resistance')">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('edit-resistance-measurements-container').innerHTML += template;
+                });
+            }
+            
+            // Add frequency measurements
+            if (data.frequency_measurements && data.frequency_measurements.length > 0) {
+                data.frequency_measurements.forEach((fm, index) => {
+                    const template = `
+                        <div class="row frequency-measurement mb-2">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" name="frequency_param_name_${index}" value="${fm.parameter_name}" placeholder="Parameter Name">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" step="any" class="form-control" name="frequency_min_${index}" value="${fm.min_value}" placeholder="Min">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" step="any" class="form-control" name="frequency_max_${index}" value="${fm.max_value}" placeholder="Max">
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select" name="frequency_unit_${index}">
+                                    <option value="Hz" ${fm.unit === 'Hz' ? 'selected' : ''}>Hz</option>
+                                    <option value="kHz" ${fm.unit === 'kHz' ? 'selected' : ''}>kHz</option>
+                                    <option value="MHz" ${fm.unit === 'MHz' ? 'selected' : ''}>MHz</option>
+                                    <option value="GHz" ${fm.unit === 'GHz' ? 'selected' : ''}>GHz</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeMeasurement(this, 'frequency')">Remove</button>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('edit-frequency-measurements-container').innerHTML += template;
+                });
+            }
+            
+            // Update the form action to point to the correct URL
+            document.getElementById('editTestConfigTypeForm').action = `/test_config_type/update/${id}/`;
+        } catch (error) {
+            console.error('Error fetching Test Config Type data:', error);
+        }
+    }
+    
+    // Delete Test Config Type functionality
+    function deleteTestConfigType(id, name) {
+        // Set the Test Config Type name in the modal
+        document.getElementById('testConfigTypeNameToDelete').textContent = name;
+        document.getElementById('delete_id').value = id;
+        
+        // Clear any previous input and errors
+        document.getElementById('confirmDeleteName').value = '';
+        document.getElementById('deleteNameMismatch').style.display = 'none';
+        document.getElementById('confirmDeleteBtn').disabled = true;
+        
+        // Update the form action to point to the correct URL
+        document.getElementById('deleteTestConfigTypeForm').action = `/test_config_type/delete/${id}/`;
+    }
+    
+    // Handle delete confirmation input
+    document.getElementById('confirmDeleteName').addEventListener('input', function() {
+        const inputName = this.value;
+        const expectedName = document.getElementById('testConfigTypeNameToDelete').textContent;
+        const mismatchElement = document.getElementById('deleteNameMismatch');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        if (inputName === expectedName) {
+            mismatchElement.style.display = 'none';
+            confirmBtn.disabled = false;
+        } else {
+            mismatchElement.style.display = 'block';
+            confirmBtn.disabled = true;
+        }
+    });
+</script>
+{% endblock %}

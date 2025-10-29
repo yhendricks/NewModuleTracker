@@ -37,6 +37,9 @@
                                 {% if perms.pcb_type_app.add_pcbtype %}
                                     <li><a class="dropdown-item" href="{% url 'pcb_type_list' %}">PCB Types</a></li>
                                 {% endif %}
+                                {% if perms.test_config_type_app.add_testconfigtype %}
+                                    <li><a class="dropdown-item" href="{% url 'test_config_type_list' %}">Test Config Types</a></li>
+                                {% endif %}
                             </ul>
                         </li>
                     {% endif %}

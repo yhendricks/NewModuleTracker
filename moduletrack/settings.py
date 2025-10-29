@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'moduletrack',  # Main app for signals
     'pcb_type_app',  # Custom app
+    'test_config_type_app',  # Test Config Type app
     'django_htmx',  # HTMX support
 ]
 

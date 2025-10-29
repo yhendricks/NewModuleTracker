@@ -41,4 +41,5 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('logout/', views.custom_logout, name='logout'),
     path('pcb_type/', include('pcb_type_app.urls')),
+    path('test_config_type/', include('test_config_type_app.urls')),
 ]
