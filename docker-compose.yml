@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the database file to the host
+      - ./db:/app/db
+      # Mount the entire project directory
+      - .:/app
+    environment:
+      - DEBUG=1
+      - DB_NAME=/app/db/db.sqlite3
+    command: python manage.py runserver 0.0.0.0:8000
