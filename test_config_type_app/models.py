@@ -17,80 +17,54 @@ class TestConfigType(models.Model):
         ordering = ['name']
 
 
-class VoltageMeasurement(models.Model):
-    test_config = models.ForeignKey(TestConfigType, on_delete=models.CASCADE, related_name='voltage_measurements')
-    parameter_name = models.CharField(max_length=100)
-    min_value = models.FloatField()
-    max_value = models.FloatField()
-    unit = models.CharField(max_length=10, default='V')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.parameter_name}: {self.min_value}V - {self.max_value}V"
-
-    class Meta:
-        verbose_name = "Voltage Measurement"
-        verbose_name_plural = "Voltage Measurements"
-
-
-class CurrentMeasurement(models.Model):
-    test_config = models.ForeignKey(TestConfigType, on_delete=models.CASCADE, related_name='current_measurements')
-    parameter_name = models.CharField(max_length=100)
-    min_value = models.FloatField()
-    max_value = models.FloatField()
-    unit = models.CharField(max_length=10, default='A')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.parameter_name}: {self.min_value}A - {self.max_value}A"
-
-    class Meta:
-        verbose_name = "Current Measurement"
-        verbose_name_plural = "Current Measurements"
-
-
-class YesNoQuestion(models.Model):
-    test_config = models.ForeignKey(TestConfigType, on_delete=models.CASCADE, related_name='yes_no_questions')
-    question_text = models.CharField(max_length=200)
+class TestStep(models.Model):
+    STEP_TYPES = [
+        ('VOLTAGE', 'Voltage Measurement'),
+        ('CURRENT', 'Current Measurement'),
+        ('RESISTANCE', 'Resistance Measurement'),
+        ('FREQUENCY', 'Frequency Measurement'),
+        ('QUESTION', 'Yes/No Question'),
+        ('INSTRUCTION', 'Instruction/User Action'),
+    ]
+    
+    test_config = models.ForeignKey(TestConfigType, on_delete=models.CASCADE, related_name='steps')
+    step_type = models.CharField(max_length=20, choices=STEP_TYPES)
+    order = models.PositiveIntegerField()
+    
+    # For measurements
+    parameter_name = models.CharField(max_length=100, blank=True, null=True)
+    min_value = models.FloatField(blank=True, null=True)
+    max_value = models.FloatField(blank=True, null=True)
+    unit = models.CharField(max_length=10, blank=True, null=True)
+    
+    # For questions
+    question_text = models.CharField(max_length=500, blank=True, null=True)
     required_answer = models.BooleanField(default=True)  # True for 'Yes', False for 'No'
+    
+    # For instructions
+    instruction_text = models.TextField(blank=True, null=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        required = "Yes" if self.required_answer else "No"
-        return f"{self.question_text} (Answer: {required})"
+        if self.step_type == 'VOLTAGE':
+            return f"Voltage: {self.parameter_name} ({self.min_value}V - {self.max_value}V)"
+        elif self.step_type == 'CURRENT':
+            return f"Current: {self.parameter_name} ({self.min_value}A - {self.max_value}A)"
+        elif self.step_type == 'RESISTANCE':
+            return f"Resistance: {self.parameter_name} ({self.min_value}Ω - {self.max_value}Ω)"
+        elif self.step_type == 'FREQUENCY':
+            return f"Frequency: {self.parameter_name} ({self.min_value}Hz - {self.max_value}Hz)"
+        elif self.step_type == 'QUESTION':
+            required = "Yes" if self.required_answer else "No"
+            return f"Question: {self.question_text} (Answer: {required})"
+        elif self.step_type == 'INSTRUCTION':
+            return f"Instruction: {self.instruction_text}"
+        else:
+            return f"Step {self.order}: {self.get_step_type_display()}"
 
     class Meta:
-        verbose_name = "Yes/No Question"
-        verbose_name_plural = "Yes/No Questions"
-
-
-class ResistanceMeasurement(models.Model):
-    test_config = models.ForeignKey(TestConfigType, on_delete=models.CASCADE, related_name='resistance_measurements')
-    parameter_name = models.CharField(max_length=100)
-    min_value = models.FloatField()
-    max_value = models.FloatField()
-    unit = models.CharField(max_length=10, default='Ω')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.parameter_name}: {self.min_value}Ω - {self.max_value}Ω"
-
-    class Meta:
-        verbose_name = "Resistance Measurement"
-        verbose_name_plural = "Resistance Measurements"
-
-
-class FrequencyMeasurement(models.Model):
-    test_config = models.ForeignKey(TestConfigType, on_delete=models.CASCADE, related_name='frequency_measurements')
-    parameter_name = models.CharField(max_length=100)
-    min_value = models.FloatField()
-    max_value = models.FloatField()
-    unit = models.CharField(max_length=10, default='Hz')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.parameter_name}: {self.min_value}Hz - {self.max_value}Hz"
-
-    class Meta:
-        verbose_name = "Frequency Measurement"
-        verbose_name_plural = "Frequency Measurements"
+        verbose_name = "Test Step"
+        verbose_name_plural = "Test Steps"
+        ordering = ['test_config', 'order']

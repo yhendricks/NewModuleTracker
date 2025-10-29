@@ -1,30 +1,12 @@
 from django.contrib import admin
-from .models import TestConfigType, VoltageMeasurement, CurrentMeasurement, YesNoQuestion, ResistanceMeasurement, FrequencyMeasurement
+from .models import TestConfigType, TestStep
 
 
-class VoltageMeasurementInline(admin.TabularInline):
-    model = VoltageMeasurement
+class TestStepInline(admin.TabularInline):
+    model = TestStep
     extra = 1
-
-
-class CurrentMeasurementInline(admin.TabularInline):
-    model = CurrentMeasurement
-    extra = 1
-
-
-class YesNoQuestionInline(admin.TabularInline):
-    model = YesNoQuestion
-    extra = 1
-
-
-class ResistanceMeasurementInline(admin.TabularInline):
-    model = ResistanceMeasurement
-    extra = 1
-
-
-class FrequencyMeasurementInline(admin.TabularInline):
-    model = FrequencyMeasurement
-    extra = 1
+    fields = ['order', 'step_type', 'parameter_name', 'min_value', 'max_value', 'unit', 'question_text', 'required_answer', 'instruction_text']
+    ordering = ['order']
 
 
 @admin.register(TestConfigType)
@@ -33,45 +15,12 @@ class TestConfigTypeAdmin(admin.ModelAdmin):
     list_filter = ['created_at']
     search_fields = ['name', 'description']
     readonly_fields = ['created_at', 'updated_at']
-    inlines = [
-        VoltageMeasurementInline,
-        CurrentMeasurementInline,
-        YesNoQuestionInline,
-        ResistanceMeasurementInline,
-        FrequencyMeasurementInline,
-    ]
+    inlines = [TestStepInline]
 
 
-@admin.register(VoltageMeasurement)
-class VoltageMeasurementAdmin(admin.ModelAdmin):
-    list_display = ['parameter_name', 'min_value', 'max_value', 'unit', 'test_config']
-    list_filter = ['test_config']
-    search_fields = ['parameter_name', 'test_config__name']
-
-
-@admin.register(CurrentMeasurement)
-class CurrentMeasurementAdmin(admin.ModelAdmin):
-    list_display = ['parameter_name', 'min_value', 'max_value', 'unit', 'test_config']
-    list_filter = ['test_config']
-    search_fields = ['parameter_name', 'test_config__name']
-
-
-@admin.register(YesNoQuestion)
-class YesNoQuestionAdmin(admin.ModelAdmin):
-    list_display = ['question_text', 'required_answer', 'test_config']
-    list_filter = ['test_config', 'required_answer']
-    search_fields = ['question_text', 'test_config__name']
-
-
-@admin.register(ResistanceMeasurement)
-class ResistanceMeasurementAdmin(admin.ModelAdmin):
-    list_display = ['parameter_name', 'min_value', 'max_value', 'unit', 'test_config']
-    list_filter = ['test_config']
-    search_fields = ['parameter_name', 'test_config__name']
-
-
-@admin.register(FrequencyMeasurement)
-class FrequencyMeasurementAdmin(admin.ModelAdmin):
-    list_display = ['parameter_name', 'min_value', 'max_value', 'unit', 'test_config']
-    list_filter = ['test_config']
-    search_fields = ['parameter_name', 'test_config__name']
+@admin.register(TestStep)
+class TestStepAdmin(admin.ModelAdmin):
+    list_display = ['test_config', 'order', 'step_type', 'parameter_name', 'question_text', 'instruction_text']
+    list_filter = ['step_type', 'test_config']
+    search_fields = ['test_config__name', 'parameter_name', 'question_text', 'instruction_text']
+    ordering = ['test_config', 'order']
