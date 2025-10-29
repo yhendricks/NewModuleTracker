@@ -296,30 +296,82 @@
             // Clear existing steps
             document.getElementById('edit-steps-container').innerHTML = '';
             
+            // Reset the edit step counter
+            editStepCount = 0;
+            
             // Add steps from the data
             data.steps.sort((a, b) => a.order - b.order);  // Sort by order
             data.steps.forEach((step, index) => {
-                addStep(true);  // Add an empty step first
+                // Add an empty step first and update the counter
+                const containerId = 'edit-steps-container';
+                const container = document.getElementById(containerId);
+                const count = editStepCount++;
+                
+                const template = `
+                    <div class="step mb-3 p-3 border rounded">
+                        <div class="row">
+                            <div class="col-md-10">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <label class="form-label">Step Type</label>
+                                        <select class="form-select step-type" name="step_type_${count}" onchange="updateStepFields(${count})">
+                                            <option value="">Select Type</option>
+                                            <option value="VOLTAGE">Voltage Measurement</option>
+                                            <option value="CURRENT">Current Measurement</option>
+                                            <option value="RESISTANCE">Resistance Measurement</option>
+                                            <option value="FREQUENCY">Frequency Measurement</option>
+                                            <option value="QUESTION">Yes/No Question</option>
+                                            <option value="INSTRUCTION">Instruction</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-10">
+                                        <div class="step-fields-container" id="step-fields-${count}">
+                                            <p class="text-muted">Select a step type to configure fields</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-center">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStep(this)">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                container.innerHTML += template;
                 
                 // Set the step type
-                const stepTypeSelect = document.querySelector(`select[name="step_type_${index}"]`);
+                const stepTypeSelect = document.querySelector(`select[name="step_type_${count}"]`);
                 if (stepTypeSelect) {
                     stepTypeSelect.value = step.step_type;
-                    updateStepFields(index);  // Update fields based on type
-                    
-                    // Then populate the specific fields
-                    if (['VOLTAGE', 'CURRENT', 'RESISTANCE', 'FREQUENCY'].includes(step.step_type)) {
-                        const prefix = step.step_type.toLowerCase();
-                        document.querySelector(`input[name="${prefix}_param_name_${index}"]`).value = step.parameter_name || '';
-                        document.querySelector(`input[name="${prefix}_min_${index}"]`).value = step.min_value || '';
-                        document.querySelector(`input[name="${prefix}_max_${index}"]`).value = step.max_value || '';
-                        document.querySelector(`select[name="${prefix}_unit_${index}"]`).value = step.unit || '';
-                    } else if (step.step_type === 'QUESTION') {
-                        document.querySelector(`input[name="question_text_${index}"]`).value = step.question_text || '';
-                        document.querySelector(`select[name="question_required_${index}"]`).value = step.required_answer ? 'true' : 'false';
-                    } else if (step.step_type === 'INSTRUCTION') {
-                        document.querySelector(`textarea[name="instruction_text_${index}"]`).value = step.instruction_text || '';
-                    }
+                    // Wait for the select to update, then update fields and populate data
+                    setTimeout(() => {
+                        updateStepFields(count);  // Update fields based on type
+                        
+                        // Then populate the specific fields
+                        if (['VOLTAGE', 'CURRENT', 'RESISTANCE', 'FREQUENCY'].includes(step.step_type)) {
+                            const prefix = step.step_type.toLowerCase();
+                            const paramInput = document.querySelector(`input[name="${prefix}_param_name_${count}"]`);
+                            const minInput = document.querySelector(`input[name="${prefix}_min_${count}"]`);
+                            const maxInput = document.querySelector(`input[name="${prefix}_max_${count}"]`);
+                            const unitSelect = document.querySelector(`select[name="${prefix}_unit_${count}"]`);
+                            
+                            if (paramInput) paramInput.value = step.parameter_name || '';
+                            if (minInput) minInput.value = step.min_value || '';
+                            if (maxInput) maxInput.value = step.max_value || '';
+                            if (unitSelect) unitSelect.value = step.unit || '';
+                        } else if (step.step_type === 'QUESTION') {
+                            const questionInput = document.querySelector(`input[name="question_text_${count}"]`);
+                            const answerSelect = document.querySelector(`select[name="question_required_${count}"]`);
+                            
+                            if (questionInput) questionInput.value = step.question_text || '';
+                            if (answerSelect) answerSelect.value = step.required_answer ? 'true' : 'false';
+                        } else if (step.step_type === 'INSTRUCTION') {
+                            const instructionTextarea = document.querySelector(`textarea[name="instruction_text_${count}"]`);
+                            
+                            if (instructionTextarea) instructionTextarea.value = step.instruction_text || '';
+                        }
+                    }, 10); // Small delay to ensure DOM is updated
                 }
             });
             
