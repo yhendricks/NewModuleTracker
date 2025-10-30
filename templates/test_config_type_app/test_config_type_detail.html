@@ -23,6 +23,9 @@
     </div>
 </div>
 
+<!-- Hidden CSRF token for AJAX requests -->
+{% csrf_token %}
+
 <!-- Test Steps -->
 <div class="card mt-3">
     <div class="card-header">
@@ -309,6 +312,9 @@
     async function editTestConfigType(id) {
         try {
             const response = await fetch(`/test_config_type/update/${id}/?format=json`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const data = await response.json();
             
             document.getElementById('edit_id').value = data.id;
@@ -316,7 +322,8 @@
             document.getElementById('edit_description').value = data.description || '';
             
             // Clear existing steps
-            document.getElementById('edit-steps-container').innerHTML = '';
+            const stepsContainer = document.getElementById('edit-steps-container');
+            stepsContainer.innerHTML = '';
             
             // Reset the edit step counter
             editStepCount = 0;
@@ -325,8 +332,6 @@
             data.steps.sort((a, b) => a.order - b.order);  // Sort by order
             data.steps.forEach((step, index) => {
                 // Add an empty step first and update the counter
-                const containerId = 'edit-steps-container';
-                const container = document.getElementById(containerId);
                 const count = editStepCount++;
                 
                 const template = `
@@ -360,7 +365,7 @@
                     </div>
                 `;
                 
-                container.insertAdjacentHTML('beforeend', template);
+                stepsContainer.insertAdjacentHTML('beforeend', template);
                 
                 // Set the step type
                 const stepTypeSelect = document.querySelector(`select[name="step_type_${count}"]`);
@@ -401,6 +406,7 @@
             document.getElementById('editTestConfigTypeForm').action = `/test_config_type/update/${id}/`;
         } catch (error) {
             console.error('Error fetching Test Config Type data:', error);
+            alert('Error fetching Test Config Type data: ' + error.message);
         }
     }
     
@@ -454,11 +460,24 @@
     
     // Function to move a step up or down
     function moveStep(stepId, direction) {
+        // Show loading indicator
+        const buttons = document.querySelectorAll(`button[data-step-id="${stepId}"]`);
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            const icon = btn.querySelector('i');
+            if (icon) {
+                icon.className = 'bi bi-arrow-repeat spin';
+            }
+        });
+        
+        // Get CSRF token
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
         fetch(`/test_config_type/{{ test_config.id }}/move_step/${stepId}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': csrftoken
             },
             body: `direction=${direction}`
         })
@@ -469,10 +488,26 @@
                 location.reload();
             } else {
                 alert('Error moving step: ' + data.error);
+                // Re-enable buttons on error
+                buttons.forEach(btn => {
+                    btn.disabled = false;
+                    const icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.className = direction === 'up' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+                    }
+                });
             }
         })
         .catch(error => {
             alert('Error moving step: ' + error);
+            // Re-enable buttons on error
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = direction === 'up' ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+                }
+            });
         });
     }
 {% endblock %}
