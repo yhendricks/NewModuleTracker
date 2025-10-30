@@ -115,7 +115,7 @@
                 <h5 class="modal-title" id="addPcbModalLabel">Add New PCB</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'pcb_create' %}">
+            <form method="post" action="{% url 'batch_pcb_create' %}">
                 {% csrf_token %}
                 <input type="hidden" name="batch_id" value="{{ batch.id }}">
                 <div class="modal-body">

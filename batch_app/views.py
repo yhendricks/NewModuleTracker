@@ -141,22 +141,70 @@ def batch_delete(request, pk):
 
 
 @login_required
-@permission_required('batch_app.view_batch', raise_exception=True)
-def batch_detail(request, pk):
-    """View details of a specific Batch"""
-    batch = get_object_or_404(Batch, pk=pk)
+@permission_required('batch_app.add_pcb', raise_exception=True)
+def batch_pcb_create(request):
+    """Create a new PCB"""
+    if request.method == 'POST':
+        batch_id = request.POST.get('batch_id')
+        serial_number = request.POST.get('serial_number')
+        hardware_modified = request.POST.get('hardware_modified') == 'on'
+        modified_hardware_version = request.POST.get('modified_hardware_version', '')
+        
+        # Check if serial number already exists
+        if Pcb.objects.filter(serial_number__iexact=serial_number).exists():
+            messages.error(request, 'A PCB with this serial number already exists.')
+            return redirect('batch_detail', pk=batch_id)
+        
+        try:
+            batch = get_object_or_404(Batch, pk=batch_id)
+            pcb = Pcb.objects.create(
+                serial_number=serial_number,
+                batch=batch,
+                hardware_modified=hardware_modified,
+                modified_hardware_version=modified_hardware_version if hardware_modified else None
+            )
+            
+            messages.success(request, f'PCB "{pcb.serial_number}" created successfully.')
+            return redirect('batch_detail', pk=batch_id)
+        except Exception as e:
+            messages.error(request, f'Error creating PCB: {str(e)}')
+            return redirect('batch_detail', pk=batch_id)
     
-    # Get PCB types and test config types for the forms
-    pcb_types = PcbType.objects.all().order_by('name')
-    test_configs = TestConfigType.objects.all().order_by('name')
-    
-    context = {
-        'batch': batch,
-        'pcb_types': pcb_types,
-        'test_configs': test_configs,
-    }
-    return render(request, 'batch_app/batch_detail.html', context)
+    return redirect('batch_list')
 
 
 # Create the management group when the app is loaded
 create_batch_management_group()
+
+
+@login_required
+@permission_required('batch_app.add_pcb', raise_exception=True)
+def batch_pcb_create(request):
+    """Create a new PCB"""
+    if request.method == 'POST':
+        batch_id = request.POST.get('batch_id')
+        serial_number = request.POST.get('serial_number')
+        hardware_modified = request.POST.get('hardware_modified') == 'on'
+        modified_hardware_version = request.POST.get('modified_hardware_version', '')
+        
+        # Check if serial number already exists
+        if Pcb.objects.filter(serial_number__iexact=serial_number).exists():
+            messages.error(request, 'A PCB with this serial number already exists.')
+            return redirect('batch_detail', pk=batch_id)
+        
+        try:
+            batch = get_object_or_404(Batch, pk=batch_id)
+            pcb = Pcb.objects.create(
+                serial_number=serial_number,
+                batch=batch,
+                hardware_modified=hardware_modified,
+                modified_hardware_version=modified_hardware_version if hardware_modified else None
+            )
+            
+            messages.success(request, f'PCB "{pcb.serial_number}" created successfully.')
+            return redirect('batch_detail', pk=batch_id)
+        except Exception as e:
+            messages.error(request, f'Error creating PCB: {str(e)}')
+            return redirect('batch_detail', pk=batch_id)
+    
+    return redirect('batch_list')
