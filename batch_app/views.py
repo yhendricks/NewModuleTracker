@@ -29,9 +29,15 @@ def batch_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Get PCB types and test config types for the forms
+    pcb_types = PcbType.objects.all().order_by('name')
+    test_configs = TestConfigType.objects.all().order_by('name')
+    
     context = {
         'batches': page_obj,
         'search_query': search_query,
+        'pcb_types': pcb_types,
+        'test_configs': test_configs,
     }
     return render(request, 'batch_app/batch_list.html', context)
 
@@ -121,6 +127,11 @@ def batch_update(request, pk):
 def batch_delete(request, pk):
     """Delete a Batch"""
     batch = get_object_or_404(Batch, pk=pk)
+    
+    # Check if batch has any PCBs
+    if batch.pcbs.count() > 0:
+        messages.error(request, f'Cannot delete batch "{batch.name}" because it contains {batch.pcbs.count()} PCB(s). Please delete all PCBs first.')
+        return redirect('batch_list')
     
     # Check if confirmation name matches
     confirm_name = request.POST.get('confirm_name', '')
