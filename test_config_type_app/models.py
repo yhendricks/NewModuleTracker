@@ -53,7 +53,7 @@ class TestStep(models.Model):
         elif self.step_type == 'CURRENT':
             return f"Current: {self.parameter_name} ({self.min_value}A - {self.max_value}A)"
         elif self.step_type == 'RESISTANCE':
-            return f"Resistance: {self.parameter_name} ({self.min_value}Ω - {self.max_value}Ω)"
+            return f"Resistance: {self.parameter_name} ({self.min_value}ohm - {self.max_value}ohm)"
         elif self.step_type == 'FREQUENCY':
             return f"Frequency: {self.parameter_name} ({self.min_value}Hz - {self.max_value}Hz)"
         elif self.step_type == 'QUESTION':
