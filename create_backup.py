@@ -24,12 +24,13 @@ def create_db_backup():
         # Ensure the backup directory exists
         os.makedirs(backup_dir, exist_ok=True)
         
-        # Run Django's dumpdata command
+        # Run Django's dumpdata command with proper encoding
         management.call_command('dumpdata', 
                                '--exclude', 'contenttypes', 
                                '--exclude', 'auth.permission', 
                                '--exclude', 'sessions.session',
-                               output=backup_file)
+                               output=backup_file, 
+                               verbosity=0)
         
         print(f"Database backup created: {backup_file}")
         return backup_file
