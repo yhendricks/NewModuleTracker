@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+
+{% block title %}Batches{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Batches</h2>
+    {% if perms.batch_app.add_batch %}
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBatchModal">
+            <i class="bi bi-plus-circle"></i> Add Batch
+        </button>
+    {% endif %}
+</div>
+
+<!-- Add Batch Modal -->
+{% if perms.batch_app.add_batch %}
+<div class="modal fade" id="addBatchModal" tabindex="-1" aria-labelledby="addBatchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addBatchModalLabel">Add New Batch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'batch_create' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="add_name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="add_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="add_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add_pcb_type" class="form-label">PCB Type</label>
+                        <select class="form-select" id="add_pcb_type" name="pcb_type" required>
+                            <option value="">Select PCB Type</option>
+                            {% for pcb_type in pcb_types %}
+                                <option value="{{ pcb_type.id }}">{{ pcb_type.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add_test_config_type" class="form-label">Test Config Type</label>
+                        <select class="form-select" id="add_test_config_type" name="test_config_type" required>
+                            <option value="">Select Test Config Type</option>
+                            {% for test_config in test_configs %}
+                                <option value="{{ test_config.id }}">{{ test_config.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add_hardware_version" class="form-label">Hardware Version</label>
+                        <input type="text" class="form-control" id="add_hardware_version" name="hardware_version" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Batch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Edit Batch Modal -->
+{% if perms.batch_app.change_batch %}
+<div class="modal fade" id="editBatchModal" tabindex="-1" aria-labelledby="editBatchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editBatchModalLabel">Edit Batch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editBatchForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="id">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_pcb_type" class="form-label">PCB Type</label>
+                        <select class="form-select" id="edit_pcb_type" name="pcb_type" required>
+                            <option value="">Select PCB Type</option>
+                            {% for pcb_type in pcb_types %}
+                                <option value="{{ pcb_type.id }}">{{ pcb_type.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_test_config_type" class="form-label">Test Config Type</label>
+                        <select class="form-select" id="edit_test_config_type" name="test_config_type" required>
+                            <option value="">Select Test Config Type</option>
+                            {% for test_config in test_configs %}
+                                <option value="{{ test_config.id }}">{{ test_config.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_hardware_version" class="form-label">Hardware Version</label>
+                        <input type="text" class="form-control" id="edit_hardware_version" name="hardware_version" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Batch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+{% if perms.batch_app.delete_batch %}
+<div class="modal fade" id="deleteBatchModal" tabindex="-1" aria-labelledby="deleteBatchModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteBatchModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="deleteBatchForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="delete_id" name="id">
+                    <p>Are you sure you want to delete the Batch "<strong id="batchNameToDelete"></strong>"?</p>
+                    <p class="text-danger">This action cannot be undone.</p>
+                    <p>Please type the exact name of the Batch to confirm deletion:</p>
+                    <input type="text" class="form-control" id="confirmDeleteName" name="confirm_name" placeholder="Type the name here..." required>
+                    <div id="deleteNameMismatch" class="text-danger mt-2" style="display:none;">Name does not match!</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Filter Control -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <label for="search" class="form-label">Search Batches</label>
+                <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}" placeholder="Search by name or description...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    <a href="{% url 'batch_list' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Batches Table -->
+<div class="card">
+    <div class="card-body">
+        {% if batches %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">PCB Type</th>
+                            <th scope="col">Test Config Type</th>
+                            <th scope="col">Hardware Version</th>
+                            <th scope="col">PCBs Count</th>
+                            <th scope="col">Created</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for batch in batches %}
+                            <tr>
+                                <td>{{ batch.name }}</td>
+                                <td>{{ batch.pcb_type.name }}</td>
+                                <td>{{ batch.test_config_type.name }}</td>
+                                <td>{{ batch.hardware_version }}</td>
+                                <td>{{ batch.pcbs.count }}</td>
+                                <td>{{ batch.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                onclick="viewBatch({{ batch.id }})">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        {% if perms.batch_app.change_batch %}
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                                    onclick="editBatch({{ batch.id }})"
+                                                    data-bs-toggle="modal" data-bs-target="#editBatchModal">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        {% endif %}
+                                        {% if perms.batch_app.delete_batch %}
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    onclick="deleteBatch({{ batch.id }}, '{{ batch.name|escapejs }}')"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteBatchModal">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if batches.has_other_pages %}
+                <nav aria-label="Batches pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if batches.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">First</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ batches.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">First</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Previous</span>
+                            </li>
+                        {% endif %}
+
+                        {% for num in batches.paginator.page_range %}
+                            {% if batches.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > batches.number|add:'-3' and num < batches.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if batches.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ batches.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ batches.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">Last</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Next</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Last</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-clipboard-data" style="font-size: 3rem;"></i>
+                <h4 class="mt-3">No Batches Found</h4>
+                <p class="text-muted">
+                    {% if search_query %}
+                        No Batches match your search for "{{ search_query }}".
+                    {% else %}
+                        Get started by adding your first Batch.
+                    {% endif %}
+                </p>
+                {% if perms.batch_app.add_batch %}
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBatchModal">
+                        <i class="bi bi-plus-circle"></i> Add Batch
+                    </button>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Edit Batch functionality
+    async function editBatch(id) {
+        try {
+            const response = await fetch(`/batch/update/${id}/?format=json`);
+            const data = await response.json();
+            
+            document.getElementById('edit_id').value = data.id;
+            document.getElementById('edit_name').value = data.name;
+            document.getElementById('edit_description').value = data.description || '';
+            document.getElementById('edit_pcb_type').value = data.pcb_type;
+            document.getElementById('edit_test_config_type').value = data.test_config_type;
+            document.getElementById('edit_hardware_version').value = data.hardware_version;
+            
+            // Update the form action to point to the correct URL
+            document.getElementById('editBatchForm').action = `/batch/update/${id}/`;
+        } catch (error) {
+            console.error('Error fetching Batch data:', error);
+        }
+    }
+    
+    // View Batch functionality
+    function viewBatch(id) {
+        // Redirect to the detail view
+        window.location.href = `/batch/${id}/`;
+    }
+    
+    // Delete Batch functionality
+    function deleteBatch(id, name) {
+        // Set the Batch name in the modal
+        document.getElementById('batchNameToDelete').textContent = name;
+        document.getElementById('delete_id').value = id;
+        
+        // Clear any previous input and errors
+        document.getElementById('confirmDeleteName').value = '';
+        document.getElementById('deleteNameMismatch').style.display = 'none';
+        document.getElementById('confirmDeleteBtn').disabled = true;
+        
+        // Update the form action to point to the correct URL
+        document.getElementById('deleteBatchForm').action = `/batch/delete/${id}/`;
+    }
+    
+    // Handle delete confirmation input
+    document.getElementById('confirmDeleteName').addEventListener('input', function() {
+        const inputName = this.value;
+        const expectedName = document.getElementById('batchNameToDelete').textContent;
+        const mismatchElement = document.getElementById('deleteNameMismatch');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        if (inputName === expectedName) {
+            mismatchElement.style.display = 'none';
+            confirmBtn.disabled = false;
+        } else {
+            mismatchElement.style.display = 'block';
+            confirmBtn.disabled = true;
+        }
+    });
+</script>
+{% endblock %}

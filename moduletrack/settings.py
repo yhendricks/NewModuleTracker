@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'moduletrack',  # Main app for signals
     'pcb_type_app',  # Custom app
     'test_config_type_app',  # Test Config Type app
+    'batch_app',  # Batch management app
     'django_htmx',  # HTMX support
 ]
 

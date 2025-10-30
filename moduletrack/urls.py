@@ -42,4 +42,5 @@ urlpatterns = [
     path('logout/', views.custom_logout, name='logout'),
     path('pcb_type/', include('pcb_type_app.urls')),
     path('test_config_type/', include('test_config_type_app.urls')),
+    path('batch/', include('batch_app.urls')),
 ]
