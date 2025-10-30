@@ -23,6 +23,9 @@
     </div>
 </div>
 
+<!-- Hidden CSRF token for AJAX requests -->
+{% csrf_token %}
+
 <!-- Test Steps -->
 <div class="card mt-3">
     <div class="card-header">
@@ -96,83 +99,6 @@
     {% endif %}
 </div>
 
-<!-- Edit and Delete Modals (for direct access from detail page) -->
-{% if perms.test_config_type_app.change_testconfigtype %}
-<div class="modal fade" id="editTestConfigTypeModal" tabindex="-1" aria-labelledby="editTestConfigTypeModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editTestConfigTypeModalLabel">Edit Test Config Type</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="editTestConfigTypeForm" method="post">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <input type="hidden" id="edit_id" name="id">
-                    <div class="mb-3">
-                        <label for="edit_name" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="edit_name" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_description" class="form-label">Description</label>
-                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
-                    </div>
-                    
-                    <!-- Test Steps Section -->
-                    <div class="card mb-3">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <strong>Test Steps</strong>
-                            <button type="button" class="btn btn-sm btn-primary" onclick="addStep(true)">Add Step</button>
-                        </div>
-                        <div class="card-body">
-                            <div id="edit-steps-container">
-                                <!-- Steps will be populated by JavaScript -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Update Test Config Type</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Delete Confirmation Modal -->
-{% if perms.test_config_type_app.delete_testconfigtype %}
-<div class="modal fade" id="deleteTestConfigTypeModal" tabindex="-1" aria-labelledby="deleteTestConfigTypeModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteTestConfigTypeModalLabel">Confirm Deletion</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="deleteTestConfigTypeForm" method="post">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <input type="hidden" id="delete_id" name="id">
-                    <p>Are you sure you want to delete the Test Config Type "<strong id="testConfigTypeNameToDelete"></strong>"?</p>
-                    <p class="text-danger">This action cannot be undone.</p>
-                    <p>Please type the exact name of the Test Config Type to confirm deletion:</p>
-                    <input type="text" class="form-control" id="confirmDeleteName" name="confirm_name" placeholder="Type the name here..." required>
-                    <div id="deleteNameMismatch" class="text-danger mt-2" style="display:none;">Name does not match!</div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>Delete</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Hidden CSRF token for AJAX requests -->
-{% csrf_token %}
-
 <!-- Global JavaScript functions -->
 <script>
     // Edit Test Config Type functionality
@@ -193,13 +119,13 @@
             stepsContainer.innerHTML = '';
             
             // Reset the edit step counter
-            window.editStepCount = 0;
+            editStepCount = 0;
             
             // Add steps from the data
             data.steps.sort((a, b) => a.order - b.order);  // Sort by order
             data.steps.forEach((step, index) => {
                 // Add an empty step first and update the counter
-                const count = window.editStepCount++;
+                const count = editStepCount++;
                 
                 const template = `
                     <div class="step mb-3 p-3 border rounded">
@@ -291,9 +217,355 @@
         // Update the form action to point to the correct URL
         document.getElementById('deleteTestConfigTypeForm').action = `/test_config_type/delete/${id}/`;
     };
-    
+
+<!-- Edit and Delete Modals (for direct access from detail page) -->
+{% if perms.test_config_type_app.change_testconfigtype %}
+<div class="modal fade" id="editTestConfigTypeModal" tabindex="-1" aria-labelledby="editTestConfigTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTestConfigTypeModalLabel">Edit Test Config Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editTestConfigTypeForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="id">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <!-- Test Steps Section -->
+                    <div class="card mb-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <strong>Test Steps</strong>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addStep(true)">Add Step</button>
+                        </div>
+                        <div class="card-body">
+                            <div id="edit-steps-container">
+                                <!-- Steps will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Test Config Type</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+{% if perms.test_config_type_app.delete_testconfigtype %}
+<div class="modal fade" id="deleteTestConfigTypeModal" tabindex="-1" aria-labelledby="deleteTestConfigTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTestConfigTypeModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="deleteTestConfigTypeForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="delete_id" name="id">
+                    <p>Are you sure you want to delete the Test Config Type "<strong id="testConfigTypeNameToDelete"></strong>"?</p>
+                    <p class="text-danger">This action cannot be undone.</p>
+                    <p>Please type the exact name of the Test Config Type to confirm deletion:</p>
+                    <input type="text" class="form-control" id="confirmDeleteName" name="confirm_name" placeholder="Type the name here..." required>
+                    <div id="deleteNameMismatch" class="text-danger mt-2" style="display:none;">Name does not match!</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
 {% block extra_js %}
 <script>
+    let editStepCount = 0;
+
+    // Function to add a new step in edit mode
+    function addStep(isEdit = false) {
+        const containerId = isEdit ? 'edit-steps-container' : 'steps-container';
+        const container = document.getElementById(containerId);
+        const count = isEdit ? editStepCount++ : stepCount++;
+        
+        const template = `
+            <div class="step mb-3 p-3 border rounded">
+                <div class="row">
+                    <div class="col-md-10">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <label class="form-label">Step Type</label>
+                                <select class="form-select step-type" name="step_type_${count}" onchange="updateStepFields(${count})">
+                                    <option value="">Select Type</option>
+                                    <option value="VOLTAGE">Voltage Measurement</option>
+                                    <option value="CURRENT">Current Measurement</option>
+                                    <option value="RESISTANCE">Resistance Measurement</option>
+                                    <option value="FREQUENCY">Frequency Measurement</option>
+                                    <option value="QUESTION">Yes/No Question</option>
+                                    <option value="INSTRUCTION">Instruction</option>
+                                </select>
+                            </div>
+                            <div class="col-md-10">
+                                <div class="step-fields-container" id="step-fields-${count}">
+                                    <p class="text-muted">Select a step type to configure fields</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-center">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStep(this)">Remove</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', template);
+    }
+
+    // Function to update fields based on step type
+    function updateStepFields(index) {
+        const stepType = document.querySelector(`select[name="step_type_${index}"]`).value;
+        const container = document.getElementById(`step-fields-${index}`);
+        
+        let template = '';
+        
+        if (stepType === 'VOLTAGE' || stepType === 'CURRENT' || stepType === 'RESISTANCE' || stepType === 'FREQUENCY') {
+            const label = stepType === 'VOLTAGE' ? 'Voltage' : 
+                         stepType === 'CURRENT' ? 'Current' : 
+                         stepType === 'RESISTANCE' ? 'Resistance' : 'Frequency';
+            const defaultUnit = stepType === 'VOLTAGE' ? 'V' : 
+                               stepType === 'CURRENT' ? 'A' : 
+                               stepType === 'RESISTANCE' ? 'Ω' : 'Hz';
+            
+            template = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">Parameter Name</label>
+                        <input type="text" class="form-control" name="${stepType.toLowerCase()}_param_name_${index}" placeholder="Parameter name (e.g. Supply Voltage)">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Min Value</label>
+                        <input type="number" step="any" class="form-control" name="${stepType.toLowerCase()}_min_${index}" placeholder="Min">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Max Value</label>
+                        <input type="number" step="any" class="form-control" name="${stepType.toLowerCase()}_max_${index}" placeholder="Max">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Unit</label>
+                        <select class="form-select" name="${stepType.toLowerCase()}_unit_${index}">
+                            <option value="${defaultUnit}" selected>${defaultUnit}</option>
+                            ${stepType === 'VOLTAGE' ? `
+                                <option value="mV">mV</option>
+                                <option value="kV">kV</option>
+                            ` : stepType === 'CURRENT' ? `
+                                <option value="mA">mA</option>
+                                <option value="μA">μA</option>
+                            ` : stepType === 'RESISTANCE' ? `
+                                <option value="kohm">kohm</option>
+                                <option value="Mohm">Mohm</option>
+                            ` : `
+                                <option value="kHz">kHz</option>
+                                <option value="MHz">MHz</option>
+                                <option value="GHz">GHz</option>
+                            `}
+                        </select>
+                    </div>
+                </div>
+            `;
+        } else if (stepType === 'QUESTION') {
+            template = `
+                <div class="row">
+                    <div class="col-md-8">
+                        <label class="form-label">Question</label>
+                        <input type="text" class="form-control" name="question_text_${index}" placeholder="Question for the user">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Expected Answer</label>
+                        <select class="form-select" name="question_required_${index}">
+                            <option value="true">Expected: Yes</option>
+                            <option value="false">Expected: No</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        } else if (stepType === 'INSTRUCTION') {
+            template = `
+                <div class="row">
+                    <div class="col-md-12">
+                        <label class="form-label">Instruction</label>
+                        <textarea class="form-control" name="instruction_text_${index}" placeholder="Provide instructions for the user" rows="2"></textarea>
+                    </div>
+                </div>
+            `;
+        } else {
+            template = '<p class="text-muted">Select a step type to configure fields</p>';
+        }
+        
+        container.innerHTML = template;
+    }
+
+    // Function to remove a step
+    function removeStep(button) {
+        const stepDiv = button.closest('.step');
+        stepDiv.remove();
+    }
+
+    // Edit Test Config Type functionality
+    async function editTestConfigType(id) {
+        try {
+            const response = await fetch(`/test_config_type/update/${id}/?format=json`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            document.getElementById('edit_id').value = data.id;
+            document.getElementById('edit_name').value = data.name;
+            document.getElementById('edit_description').value = data.description || '';
+            
+            // Clear existing steps
+            const stepsContainer = document.getElementById('edit-steps-container');
+            stepsContainer.innerHTML = '';
+            
+            // Reset the edit step counter
+            editStepCount = 0;
+            
+            // Add steps from the data
+            data.steps.sort((a, b) => a.order - b.order);  // Sort by order
+            data.steps.forEach((step, index) => {
+                // Add an empty step first and update the counter
+                const count = editStepCount++;
+                
+                const template = `
+                    <div class="step mb-3 p-3 border rounded">
+                        <div class="row">
+                            <div class="col-md-10">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <label class="form-label">Step Type</label>
+                                        <select class="form-select step-type" name="step_type_${count}" onchange="updateStepFields(${count})">
+                                            <option value="">Select Type</option>
+                                            <option value="VOLTAGE">Voltage Measurement</option>
+                                            <option value="CURRENT">Current Measurement</option>
+                                            <option value="RESISTANCE">Resistance Measurement</option>
+                                            <option value="FREQUENCY">Frequency Measurement</option>
+                                            <option value="QUESTION">Yes/No Question</option>
+                                            <option value="INSTRUCTION">Instruction</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-10">
+                                        <div class="step-fields-container" id="step-fields-${count}">
+                                            <p class="text-muted">Select a step type to configure fields</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-center">
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStep(this)">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                stepsContainer.insertAdjacentHTML('beforeend', template);
+                
+                // Set the step type
+                const stepTypeSelect = document.querySelector(`select[name="step_type_${count}"]`);
+                if (stepTypeSelect) {
+                    stepTypeSelect.value = step.step_type;
+                    // Wait for the select to update, then update fields and populate data
+                    setTimeout(() => {
+                        updateStepFields(count);  // Update fields based on type
+                        
+                        // Then populate the specific fields
+                        if (['VOLTAGE', 'CURRENT', 'RESISTANCE', 'FREQUENCY'].includes(step.step_type)) {
+                            const prefix = step.step_type.toLowerCase();
+                            const paramInput = document.querySelector(`input[name="${prefix}_param_name_${count}"]`);
+                            const minInput = document.querySelector(`input[name="${prefix}_min_${count}"]`);
+                            const maxInput = document.querySelector(`input[name="${prefix}_max_${count}"]`);
+                            const unitSelect = document.querySelector(`select[name="${prefix}_unit_${count}"]`);
+                            
+                            if (paramInput) paramInput.value = step.parameter_name || '';
+                            if (minInput) minInput.value = step.min_value || '';
+                            if (maxInput) maxInput.value = step.max_value || '';
+                            if (unitSelect) unitSelect.value = step.unit || '';
+                        } else if (step.step_type === 'QUESTION') {
+                            const questionInput = document.querySelector(`input[name="question_text_${count}"]`);
+                            const answerSelect = document.querySelector(`select[name="question_required_${count}"]`);
+                            
+                            if (questionInput) questionInput.value = step.question_text || '';
+                            if (answerSelect) answerSelect.value = step.required_answer ? 'true' : 'false';
+                        } else if (step.step_type === 'INSTRUCTION') {
+                            const instructionTextarea = document.querySelector(`textarea[name="instruction_text_${count}"]`);
+                            
+                            if (instructionTextarea) instructionTextarea.value = step.instruction_text || '';
+                        }
+                    }, 10); // Small delay to ensure DOM is updated
+                }
+            });
+            
+            // Update the form action to point to the correct URL
+            document.getElementById('editTestConfigTypeForm').action = `/test_config_type/update/${id}/`;
+        } catch (error) {
+            console.error('Error fetching Test Config Type data:', error);
+            alert('Error fetching Test Config Type data: ' + error.message);
+        }
+    }
+    
+    // Attach to window object to make it globally accessible
+    window.editTestConfigType = editTestConfigType;
+    
+    // Delete Test Config Type functionality
+    function deleteTestConfigType(id, name) {
+        // Set the Test Config Type name in the modal
+        document.getElementById('testConfigTypeNameToDelete').textContent = name;
+        document.getElementById('delete_id').value = id;
+        
+        // Clear any previous input and errors
+        document.getElementById('confirmDeleteName').value = '';
+        document.getElementById('deleteNameMismatch').style.display = 'none';
+        document.getElementById('confirmDeleteBtn').disabled = true;
+        
+        // Update the form action to point to the correct URL
+        document.getElementById('deleteTestConfigTypeForm').action = `/test_config_type/delete/${id}/`;
+    }
+    
+    // Attach to window object to make it globally accessible
+    window.deleteTestConfigType = deleteTestConfigType;
+    
+    // Handle delete confirmation input
+    document.getElementById('confirmDeleteName').addEventListener('input', function() {
+        const inputName = this.value;
+        const expectedName = document.getElementById('testConfigTypeNameToDelete').textContent;
+        const mismatchElement = document.getElementById('deleteNameMismatch');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        if (inputName === expectedName) {
+            mismatchElement.style.display = 'none';
+            confirmBtn.disabled = false;
+        } else {
+            mismatchElement.style.display = 'block';
+            confirmBtn.disabled = true;
+        }
+    });
+    
     // Move up/down functionality
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.move-up-btn').forEach(button => {
@@ -363,159 +635,4 @@
             });
         });
     }
-    
-    // Function to add a new step
-    function addStep(isEdit = false) {
-        const containerId = isEdit ? 'edit-steps-container' : 'steps-container';
-        const container = document.getElementById(containerId);
-        const count = isEdit ? (window.editStepCount = (window.editStepCount || 0) + 1) - 1 : (window.stepCount = (window.stepCount || 0) + 1) - 1;
-        
-        const template = `
-            <div class="step mb-3 p-3 border rounded">
-                <div class="row">
-                    <div class="col-md-10">
-                        <div class="row">
-                            <div class="col-md-2">
-                                <label class="form-label">Step Type</label>
-                                <select class="form-select step-type" name="step_type_${count}" onchange="updateStepFields(${count})">
-                                    <option value="">Select Type</option>
-                                    <option value="VOLTAGE">Voltage Measurement</option>
-                                    <option value="CURRENT">Current Measurement</option>
-                                    <option value="RESISTANCE">Resistance Measurement</option>
-                                    <option value="FREQUENCY">Frequency Measurement</option>
-                                    <option value="QUESTION">Yes/No Question</option>
-                                    <option value="INSTRUCTION">Instruction</option>
-                                </select>
-                            </div>
-                            <div class="col-md-10">
-                                <div class="step-fields-container" id="step-fields-${count}">
-                                    <p class="text-muted">Select a step type to configure fields</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-center">
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeStep(this)">Remove</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        container.insertAdjacentHTML('beforeend', template);
-    }
-
-    // Function to update fields based on step type
-    function updateStepFields(index) {
-        const stepTypeSelect = document.querySelector(`select[name="step_type_${index}"]`);
-        if (!stepTypeSelect) return;
-        
-        const stepType = stepTypeSelect.value;
-        const container = document.getElementById(`step-fields-${index}`);
-        if (!container) return;
-        
-        let template = '';
-        
-        if (stepType === 'VOLTAGE' || stepType === 'CURRENT' || stepType === 'RESISTANCE' || stepType === 'FREQUENCY') {
-            const label = stepType === 'VOLTAGE' ? 'Voltage' : 
-                         stepType === 'CURRENT' ? 'Current' : 
-                         stepType === 'RESISTANCE' ? 'Resistance' : 'Frequency';
-            const defaultUnit = stepType === 'VOLTAGE' ? 'V' : 
-                               stepType === 'CURRENT' ? 'A' : 
-                               stepType === 'RESISTANCE' ? 'ohm' : 'Hz';
-            
-            template = `
-                <div class="row">
-                    <div class="col-md-4">
-                        <label class="form-label">Parameter Name</label>
-                        <input type="text" class="form-control" name="${stepType.toLowerCase()}_param_name_${index}" placeholder="Parameter name (e.g. ${label} Reading)">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Min Value</label>
-                        <input type="number" step="any" class="form-control" name="${stepType.toLowerCase()}_min_${index}" placeholder="Min">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Max Value</label>
-                        <input type="number" step="any" class="form-control" name="${stepType.toLowerCase()}_max_${index}" placeholder="Max">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Unit</label>
-                        <select class="form-select" name="${stepType.toLowerCase()}_unit_${index}">
-                            <option value="${defaultUnit}" selected>${defaultUnit}</option>
-                            ${stepType === 'VOLTAGE' ? `
-                                <option value="mV">mV</option>
-                                <option value="kV">kV</option>
-                            ` : stepType === 'CURRENT' ? `
-                                <option value="mA">mA</option>
-                                <option value="μA">μA</option>
-                            ` : stepType === 'RESISTANCE' ? `
-                                <option value="kohm">kohm</option>
-                                <option value="Mohm">Mohm</option>
-                            ` : `
-                                <option value="kHz">kHz</option>
-                                <option value="MHz">MHz</option>
-                                <option value="GHz">GHz</option>
-                            `}
-                        </select>
-                    </div>
-                </div>
-            `;
-        } else if (stepType === 'QUESTION') {
-            template = `
-                <div class="row">
-                    <div class="col-md-8">
-                        <label class="form-label">Question</label>
-                        <input type="text" class="form-control" name="question_text_${index}" placeholder="Question for the user">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Expected Answer</label>
-                        <select class="form-select" name="question_required_${index}">
-                            <option value="true">Expected: Yes</option>
-                            <option value="false">Expected: No</option>
-                        </select>
-                    </div>
-                </div>
-            `;
-        } else if (stepType === 'INSTRUCTION') {
-            template = `
-                <div class="row">
-                    <div class="col-md-12">
-                        <label class="form-label">Instruction</label>
-                        <textarea class="form-control" name="instruction_text_${index}" placeholder="Provide instructions for the user" rows="2"></textarea>
-                    </div>
-                </div>
-            `;
-        } else {
-            template = '<p class="text-muted">Select a step type to configure fields</p>';
-        }
-        
-        container.innerHTML = template;
-    }
-
-    // Function to remove a step
-    function removeStep(button) {
-        const stepDiv = button.closest('.step');
-        stepDiv.remove();
-    }
-    
-    // Handle delete confirmation input
-    document.addEventListener('DOMContentLoaded', function() {
-        const confirmDeleteName = document.getElementById('confirmDeleteName');
-        if (confirmDeleteName) {
-            confirmDeleteName.addEventListener('input', function() {
-                const inputName = this.value;
-                const expectedName = document.getElementById('testConfigTypeNameToDelete')?.textContent;
-                const mismatchElement = document.getElementById('deleteNameMismatch');
-                const confirmBtn = document.getElementById('confirmDeleteBtn');
-                
-                if (inputName === expectedName) {
-                    if (mismatchElement) mismatchElement.style.display = 'none';
-                    if (confirmBtn) confirmBtn.disabled = false;
-                } else {
-                    if (mismatchElement) mismatchElement.style.display = 'block';
-                    if (confirmBtn) confirmBtn.disabled = true;
-                }
-            });
-        }
-    });
-</script>
 {% endblock %}
