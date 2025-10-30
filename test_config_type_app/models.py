@@ -65,6 +65,9 @@ class TestStep(models.Model):
             return f"Step {self.order}: {self.get_step_type_display()}"
 
     class Meta:
+        ordering = ['test_config', 'order']
+
+    class Meta:
         verbose_name = "Test Step"
         verbose_name_plural = "Test Steps"
         ordering = ['test_config', 'order']

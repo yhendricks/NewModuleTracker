@@ -25,44 +25,84 @@
 
 <!-- Test Steps -->
 <div class="card mt-3">
-    <div class="card-header">
-        <h5 class="card-title">Test Steps</h5>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">Test Steps</h5>
+        {% if perms.test_config_type_app.change_testconfigtype and test_config.steps.count > 1 %}
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="enable-reorder-btn">
+                    <i class="bi bi-arrows-move"></i> Reorder Steps
+                </button>
+            </div>
+        {% endif %}
     </div>
     <div class="card-body">
         {% if test_config.steps.all %}
-            {% for step in test_config.steps.all %}
-                <div class="row border-bottom py-2">
-                    <div class="col-md-1"><strong>{{ step.order }}.</strong></div>
-                    <div class="col-md-2">
-                        <span class="badge bg-primary">{{ step.get_step_type_display }}</span>
+            <div id="steps-sortable">
+                {% for step in test_config.steps.all %}
+                    <div class="step-row border-bottom py-2" data-step-id="{{ step.id }}">
+                        <div class="row align-items-center">
+                            <div class="col-md-1">
+                                <strong>{{ step.order }}.</strong>
+                                {% if perms.test_config_type_app.change_testconfigtype %}
+                                    <i class="bi bi-grip-vertical text-muted ms-1 sortable-handle" style="cursor: move;"></i>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-2">
+                                <span class="badge bg-primary">{{ step.get_step_type_display }}</span>
+                            </div>
+                            <div class="col-md-7">
+                                {% if step.step_type == 'VOLTAGE' %}
+                                    <strong>{{ step.parameter_name }}</strong>: 
+                                    Measure voltage between {{ step.min_value }}{{ step.unit }} and {{ step.max_value }}{{ step.unit }}
+                                {% elif step.step_type == 'CURRENT' %}
+                                    <strong>{{ step.parameter_name }}</strong>: 
+                                    Measure current between {{ step.min_value }}{{ step.unit }} and {{ step.max_value }}{{ step.unit }}
+                                {% elif step.step_type == 'RESISTANCE' %}
+                                    <strong>{{ step.parameter_name }}</strong>: 
+                                    Measure resistance between {{ step.min_value }}{{ step.unit }} and {{ step.max_value }}{{ step.unit }}
+                                {% elif step.step_type == 'FREQUENCY' %}
+                                    <strong>{{ step.parameter_name }}</strong>: 
+                                    Measure frequency between {{ step.min_value }}{{ step.unit }} and {{ step.max_value }}{{ step.unit }}
+                                {% elif step.step_type == 'QUESTION' %}
+                                    <strong>Question:</strong> {{ step.question_text }}
+                                    <br>
+                                    <em>Expected Answer: <span class="badge bg-{% if step.required_answer %}success{% else %}danger{% endif %}">{{ step.required_answer|yesno:"Yes,No" }}</span></em>
+                                {% elif step.step_type == 'INSTRUCTION' %}
+                                    <strong>Instruction:</strong> {{ step.instruction_text }}
+                                {% endif %}
+                            </div>
+                            {% if perms.test_config_type_app.change_testconfigtype %}
+                                <div class="col-md-2 text-end">
+                                    <div class="btn-group" role="group">
+                                        {% if step.order > 1 %}
+                                            <button type="button" class="btn btn-sm btn-outline-secondary move-up-btn" 
+                                                    data-step-id="{{ step.id }}" title="Move Up">
+                                                <i class="bi bi-arrow-up"></i>
+                                            </button>
+                                        {% endif %}
+                                        {% if step.order < test_config.steps.count %}
+                                            <button type="button" class="btn btn-sm btn-outline-secondary move-down-btn" 
+                                                    data-step-id="{{ step.id }}" title="Move Down">
+                                                <i class="bi bi-arrow-down"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
-                    <div class="col-md-9">
-                        {% if step.step_type == 'VOLTAGE' %}
-                            <strong>{{ step.parameter_name }}</strong>: 
-                            Measure voltage between {{ step.min_value }}{{ step.unit }} and {{ step.max_value }}{{ step.unit }}
-                        {% elif step.step_type == 'CURRENT' %}
-                            <strong>{{ step.parameter_name }}</strong>: 
-                            Measure current between {{ step.min_value }}{{ step.unit }} and {{ step.max_value }}{{ step.unit }}
-                        {% elif step.step_type == 'RESISTANCE' %}
-                            <strong>{{ step.parameter_name }}</strong>: 
-                            Measure resistance between {{ step.min_value }}{{ step.unit }} and {{ step.max_value }}{{ step.unit }}
-                        {% elif step.step_type == 'FREQUENCY' %}
-                            <strong>{{ step.parameter_name }}</strong>: 
-                            Measure frequency between {{ step.min_value }}{{ step.unit }} and {{ step.max_value }}{{ step.unit }}
-                        {% elif step.step_type == 'QUESTION' %}
-                            <strong>Question:</strong> {{ step.question_text }}
-                            <br>
-                            <em>Expected Answer: <span class="badge bg-{% if step.required_answer %}success{% else %}danger{% endif %}">{{ step.required_answer|yesno:"Yes,No" }}</span></em>
-                        {% elif step.step_type == 'INSTRUCTION' %}
-                            <strong>Instruction:</strong> {{ step.instruction_text }}
-                        {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         {% else %}
             <p class="text-muted">No steps configured for this test config.</p>
         {% endif %}
     </div>
+    {% if perms.test_config_type_app.change_testconfigtype and test_config.steps.count > 1 %}
+        <div class="card-footer text-end d-none" id="reorder-actions">
+            <button type="button" class="btn btn-secondary" id="cancel-reorder-btn">Cancel</button>
+            <button type="button" class="btn btn-success" id="save-reorder-btn">Save Order</button>
+        </div>
+    {% endif %}
 </div>
 
 <div class="mt-3">
@@ -413,4 +453,121 @@
         }
     });
 </script>
+<script>
+    // Reordering functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Enable reordering
+        const enableReorderBtn = document.getElementById('enable-reorder-btn');
+        const reorderActions = document.getElementById('reorder-actions');
+        const cancelReorderBtn = document.getElementById('cancel-reorder-btn');
+        const saveReorderBtn = document.getElementById('save-reorder-btn');
+        const stepsContainer = document.getElementById('steps-sortable');
+        
+        if (enableReorderBtn) {
+            enableReorderBtn.addEventListener('click', function() {
+                // Show reorder actions
+                reorderActions.classList.remove('d-none');
+                enableReorderBtn.classList.add('d-none');
+                
+                // Add sortable class for visual indication
+                if (stepsContainer) {
+                    stepsContainer.classList.add('sortable-active');
+                }
+            });
+        }
+        
+        if (cancelReorderBtn) {
+            cancelReorderBtn.addEventListener('click', function() {
+                // Hide reorder actions
+                reorderActions.classList.add('d-none');
+                if (enableReorderBtn) {
+                    enableReorderBtn.classList.remove('d-none');
+                }
+                
+                // Remove sortable class
+                if (stepsContainer) {
+                    stepsContainer.classList.remove('sortable-active');
+                }
+                
+                // Reload the page to reset the order
+                location.reload();
+            });
+        }
+        
+        if (saveReorderBtn) {
+            saveReorderBtn.addEventListener('click', function() {
+                // Get the new order of steps
+                const stepRows = stepsContainer.querySelectorAll('.step-row');
+                const newOrder = [];
+                
+                stepRows.forEach(function(row) {
+                    const stepId = row.getAttribute('data-step-id');
+                    newOrder.push(stepId);
+                });
+                
+                // Send AJAX request to update order
+                fetch(`/test_config_type/{{ test_config.id }}/reorder/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: `new_order=${newOrder.join(',')}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        alert('Steps reordered successfully!');
+                        // Reload the page to reflect changes
+                        location.reload();
+                    } else {
+                        alert('Error reordering steps: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error reordering steps: ' + error);
+                });
+            });
+        }
+        
+        // Move up/down functionality
+        document.querySelectorAll('.move-up-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const stepId = this.getAttribute('data-step-id');
+                moveStep(stepId, 'up');
+            });
+        });
+        
+        document.querySelectorAll('.move-down-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const stepId = this.getAttribute('data-step-id');
+                moveStep(stepId, 'down');
+            });
+        });
+    });
+    
+    // Function to move a step up or down
+    function moveStep(stepId, direction) {
+        fetch(`/test_config_type/{{ test_config.id }}/move_step/${stepId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `direction=${direction}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload the page to reflect changes
+                location.reload();
+            } else {
+                alert('Error moving step: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error moving step: ' + error);
+        });
+    }
 {% endblock %}

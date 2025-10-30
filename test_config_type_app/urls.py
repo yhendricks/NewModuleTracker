@@ -7,4 +7,6 @@ urlpatterns = [
     path('update/<int:pk>/', views.test_config_type_update, name='test_config_type_update'),
     path('delete/<int:pk>/', views.test_config_type_delete, name='test_config_type_delete'),
     path('<int:pk>/', views.test_config_type_detail, name='test_config_type_detail'),
+    path('<int:pk>/reorder/', views.reorder_test_steps, name='reorder_test_steps'),
+    path('<int:pk>/move_step/<int:step_id>/', views.move_test_step, name='move_test_step'),
 ]

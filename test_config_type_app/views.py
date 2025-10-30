@@ -141,6 +141,93 @@ def test_config_type_detail(request, pk):
     return render(request, 'test_config_type_app/test_config_type_detail.html', context)
 
 
+@login_required
+@permission_required('test_config_type_app.change_testconfigtype', raise_exception=True)
+def reorder_test_steps(request, pk):
+    """Reorder test steps for a Test Config Type"""
+    if request.method == 'POST':
+        try:
+            # Get the test config
+            test_config = get_object_or_404(TestConfigType, pk=pk)
+            
+            # Get the new order from the request
+            new_order = request.POST.get('new_order')
+            if not new_order:
+                return JsonResponse({'success': False, 'error': 'No order provided'})
+            
+            # Parse the new order (comma-separated list of step IDs)
+            step_ids = [int(id) for id in new_order.split(',')]
+            
+            # Update the order of each step
+            for index, step_id in enumerate(step_ids):
+                try:
+                    step = TestStep.objects.get(id=step_id, test_config=test_config)
+                    step.order = index + 1
+                    step.save()
+                except TestStep.DoesNotExist:
+                    return JsonResponse({'success': False, 'error': f'Step {step_id} not found'})
+            
+            return JsonResponse({'success': True, 'message': 'Steps reordered successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+@permission_required('test_config_type_app.change_testconfigtype', raise_exception=True)
+def move_test_step(request, pk, step_id):
+    """Move a test step up or down"""
+    if request.method == 'POST':
+        try:
+            # Get the test config and step
+            test_config = get_object_or_404(TestConfigType, pk=pk)
+            step = get_object_or_404(TestStep, id=step_id, test_config=test_config)
+            
+            # Get direction from the request
+            direction = request.POST.get('direction')
+            if direction not in ['up', 'down']:
+                return JsonResponse({'success': False, 'error': 'Invalid direction'})
+            
+            # Get all steps for this test config ordered by current order
+            steps = list(TestStep.objects.filter(test_config=test_config).order_by('order'))
+            
+            # Find the current index of the step
+            current_index = None
+            for i, s in enumerate(steps):
+                if s.id == step.id:
+                    current_index = i
+                    break
+            
+            if current_index is None:
+                return JsonResponse({'success': False, 'error': 'Step not found'})
+            
+            # Calculate new index based on direction
+            if direction == 'up' and current_index > 0:
+                # Swap with previous step
+                prev_step = steps[current_index - 1]
+                # Swap orders
+                step.order, prev_step.order = prev_step.order, step.order
+                step.save()
+                prev_step.save()
+            elif direction == 'down' and current_index < len(steps) - 1:
+                # Swap with next step
+                next_step = steps[current_index + 1]
+                # Swap orders
+                step.order, next_step.order = next_step.order, step.order
+                step.save()
+                next_step.save()
+            else:
+                # Already at the top/bottom, nothing to do
+                return JsonResponse({'success': True, 'message': 'Step is already at the boundary'})
+            
+            return JsonResponse({'success': True, 'message': f'Step moved {direction} successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
 def create_associated_steps(test_config, post_data):
     """Helper function to create associated steps from POST data"""
     # Get all step-related field indices to determine the sequence
