@@ -197,5 +197,3 @@ def batch_pcb_create(request):
     return redirect('batch_list')
 
 
-# Create the management group when the app is loaded
-create_batch_management_group()
