@@ -7,5 +7,6 @@ urlpatterns = [
     path('update/<int:pk>/', views.batch_update, name='batch_update'),
     path('delete/<int:pk>/', views.batch_delete, name='batch_delete'),
     path('pcb/create/', views.batch_pcb_create, name='batch_pcb_create'),
+    path('pcb/delete/<int:pcb_id>/', views.batch_pcb_delete, name='batch_pcb_delete'),
     path('<int:pk>/', views.batch_detail, name='batch_detail'),
 ]

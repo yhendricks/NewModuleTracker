@@ -7,5 +7,9 @@ class BatchAppConfig(AppConfig):
     
     def ready(self):
         # Import the models and create the management group
-        from .models import create_batch_management_group
-        create_batch_management_group()
+        try:
+            from .models import create_batch_management_group
+            create_batch_management_group()
+        except Exception:
+            # Ignore errors during app initialization
+            pass

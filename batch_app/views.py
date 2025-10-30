@@ -146,6 +146,25 @@ def batch_detail(request, pk):
 
 
 @login_required
+@permission_required('batch_app.delete_pcb', raise_exception=True)
+def batch_pcb_delete(request, pcb_id):
+    """Delete a PCB"""
+    if request.method == 'POST':
+        try:
+            pcb = get_object_or_404(Pcb, pk=pcb_id)
+            pcb_serial = pcb.serial_number
+            batch_id = pcb.batch.id
+            pcb.delete()
+            messages.success(request, f'PCB "{pcb_serial}" deleted successfully.')
+            return redirect('batch_detail', pk=batch_id)
+        except Exception as e:
+            messages.error(request, f'Error deleting PCB: {str(e)}')
+            return redirect('batch_detail', pk=pcb.batch.id)
+    
+    return redirect('batch_list')
+
+
+@login_required
 @permission_required('batch_app.add_pcb', raise_exception=True)
 def batch_pcb_create(request):
     """Create a new PCB"""
