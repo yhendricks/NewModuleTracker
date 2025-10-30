@@ -410,6 +410,9 @@
         }
     }
     
+    // Attach to window object to make it globally accessible
+    window.editTestConfigType = editTestConfigType;
+    
     // Delete Test Config Type functionality
     function deleteTestConfigType(id, name) {
         // Set the Test Config Type name in the modal
@@ -424,6 +427,9 @@
         // Update the form action to point to the correct URL
         document.getElementById('deleteTestConfigTypeForm').action = `/test_config_type/delete/${id}/`;
     }
+    
+    // Attach to window object to make it globally accessible
+    window.deleteTestConfigType = deleteTestConfigType;
     
     // Handle delete confirmation input
     document.getElementById('confirmDeleteName').addEventListener('input', function() {
