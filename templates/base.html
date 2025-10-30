@@ -40,6 +40,9 @@
                                 {% if perms.test_config_type_app.add_testconfigtype %}
                                     <li><a class="dropdown-item" href="{% url 'test_config_type_list' %}">Test Config Types</a></li>
                                 {% endif %}
+                                {% if perms.batch_app.add_batch %}
+                                    <li><a class="dropdown-item" href="{% url 'batch_list' %}">Batches</a></li>
+                                {% endif %}
                             </ul>
                         </li>
                     {% endif %}
