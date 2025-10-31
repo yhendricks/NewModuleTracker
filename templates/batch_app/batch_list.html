@@ -300,19 +300,32 @@
     async function editBatch(id) {
         try {
             const response = await fetch(`/batch/update/${id}/?format=json`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const data = await response.json();
             
-            document.getElementById('edit_id').value = data.id;
-            document.getElementById('edit_name').value = data.name;
-            document.getElementById('edit_description').value = data.description || '';
-            document.getElementById('edit_pcb_type').value = data.pcb_type;
-            document.getElementById('edit_test_config_type').value = data.test_config_type;
-            document.getElementById('edit_hardware_version').value = data.hardware_version;
+            // Set form values
+            const editId = document.getElementById('edit_id');
+            const editName = document.getElementById('edit_name');
+            const editDescription = document.getElementById('edit_description');
+            const editPcbType = document.getElementById('edit_pcb_type');
+            const editTestConfigType = document.getElementById('edit_test_config_type');
+            const editHardwareVersion = document.getElementById('edit_hardware_version');
+            const editForm = document.getElementById('editBatchForm');
+            
+            if (editId) editId.value = data.id;
+            if (editName) editName.value = data.name;
+            if (editDescription) editDescription.value = data.description || '';
+            if (editPcbType) editPcbType.value = data.pcb_type;
+            if (editTestConfigType) editTestConfigType.value = data.test_config_type;
+            if (editHardwareVersion) editHardwareVersion.value = data.hardware_version;
             
             // Update the form action to point to the correct URL
-            document.getElementById('editBatchForm').action = `/batch/update/${id}/`;
+            if (editForm) editForm.action = `/batch/update/${id}/`;
         } catch (error) {
             console.error('Error fetching Batch data:', error);
+            alert('Error fetching Batch data: ' + error.message);
         }
     }
     

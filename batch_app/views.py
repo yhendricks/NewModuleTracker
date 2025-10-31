@@ -114,8 +114,8 @@ def batch_update(request, pk):
             'id': batch.id,
             'name': batch.name,
             'description': batch.description,
-            'pcb_type': batch.pcb_type.id,
-            'test_config_type': batch.test_config_type.id,
+            'pcb_type': batch.pcb_type_id,  # Use the foreign key ID directly
+            'test_config_type': batch.test_config_type_id,  # Use the foreign key ID directly
             'hardware_version': batch.hardware_version
         })
     
