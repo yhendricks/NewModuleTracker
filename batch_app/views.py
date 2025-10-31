@@ -204,6 +204,11 @@ def batch_pcb_create(request):
             messages.error(request, f'Error creating PCB: {str(e)}')
             return redirect('batch_detail', pk=batch_id)
     
+    # Check if this is an AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Return JSON response for AJAX requests
+        return JsonResponse({'success': True})
+    
     return redirect('batch_list')
 
 
