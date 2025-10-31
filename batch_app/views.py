@@ -184,9 +184,9 @@ def batch_pcb_create(request):
         hardware_modified = request.POST.get('hardware_modified') == 'on'
         modified_hardware_version = request.POST.get('modified_hardware_version', '')
         
-        # Check if serial number already exists
-        if Pcb.objects.filter(serial_number__iexact=serial_number).exists():
-            messages.error(request, 'A PCB with this serial number already exists.')
+        # Check if serial number already exists in THIS batch
+        if Pcb.objects.filter(serial_number__iexact=serial_number, batch_id=batch_id).exists():
+            messages.error(request, 'A PCB with this serial number already exists in this batch.')
             return redirect('batch_detail', pk=batch_id)
         
         try:
