@@ -163,15 +163,6 @@
     </div>
 </div>
 
-<div class="mt-3">
-    {% if perms.batch_app.change_batch %}
-        <a href="#" class="btn btn-primary" onclick="editBatch({{ batch.id }})" data-bs-toggle="modal" data-bs-target="#editBatchModal">Edit</a>
-    {% endif %}
-    {% if perms.batch_app.delete_batch %}
-        <button type="button" class="btn btn-danger" onclick="deleteBatch({{ batch.id }}, '{{ batch.name|escapejs }}')" data-bs-toggle="modal" data-bs-target="#deleteBatchModal">Delete</button>
-    {% endif %}
-</div>
-
 <!-- Add PCB Modal -->
 {% if perms.batch_app.add_pcb %}
 <div class="modal fade" id="addPcbModal" tabindex="-1" aria-labelledby="addPcbModalLabel" aria-hidden="true">
@@ -273,88 +264,6 @@
 </div>
 {% endif %}
 
-<!-- Edit Batch Modal -->
-{% if perms.batch_app.change_batch %}
-<div class="modal fade" id="editBatchModal" tabindex="-1" aria-labelledby="editBatchModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editBatchModalLabel">Edit Batch</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="editBatchForm" method="post">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <input type="hidden" id="edit_id" name="id">
-                    <div class="mb-3">
-                        <label for="edit_name" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="edit_name" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_description" class="form-label">Description</label>
-                        <textarea class="form-control" id="edit_description" name="description" rows="3"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_pcb_type" class="form-label">PCB Type</label>
-                        <select class="form-select" id="edit_pcb_type" name="pcb_type" required>
-                            <option value="">Select PCB Type</option>
-                            {% for pcb_type in pcb_types %}
-                                <option value="{{ pcb_type.id }}">{{ pcb_type.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_test_config_type" class="form-label">Test Config Type</label>
-                        <select class="form-select" id="edit_test_config_type" name="test_config_type" required>
-                            <option value="">Select Test Config Type</option>
-                            {% for test_config in test_configs %}
-                                <option value="{{ test_config.id }}">{{ test_config.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_hardware_version" class="form-label">Hardware Version</label>
-                        <input type="text" class="form-control" id="edit_hardware_version" name="hardware_version" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Update Batch</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Delete Batch Confirmation Modal -->
-{% if perms.batch_app.delete_batch %}
-<div class="modal fade" id="deleteBatchModal" tabindex="-1" aria-labelledby="deleteBatchModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteBatchModalLabel">Confirm Deletion</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="deleteBatchForm" method="post">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <input type="hidden" id="delete_id" name="id">
-                    <p>Are you sure you want to delete the Batch "<strong id="batchNameToDelete"></strong>"?</p>
-                    <p class="text-danger">This action cannot be undone.</p>
-                    <p>Please type the exact name of the Batch to confirm deletion:</p>
-                    <input type="text" class="form-control" id="confirmDeleteName" name="confirm_name" placeholder="Type the name here..." required>
-                    <div id="deleteNameMismatch" class="text-danger mt-2" style="display:none;">Name does not match!</div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>Delete</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endif %}
 
 {% endblock %}
 
