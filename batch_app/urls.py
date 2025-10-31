@@ -9,4 +9,7 @@ urlpatterns = [
     path('pcb/create/', views.batch_pcb_create, name='batch_pcb_create'),
     path('pcb/delete/<int:pcb_id>/', views.batch_pcb_delete, name='batch_pcb_delete'),
     path('<int:pk>/', views.batch_detail, name='batch_detail'),
+    path('<int:batch_id>/pcb/update/<int:pcb_id>/', views.batch_pcb_update, name='batch_pcb_update'),
+    path('<int:batch_id>/pcb/delete/<int:pcb_id>/', views.batch_pcb_delete, name='batch_pcb_delete'),
+    path('<int:batch_id>/pcb/<int:pcb_id>/', views.batch_pcb_detail, name='batch_pcb_detail'),
 ]

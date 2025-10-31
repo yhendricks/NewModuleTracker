@@ -158,21 +158,20 @@ def batch_detail(request, pk):
 
 @login_required
 @permission_required('batch_app.delete_pcb', raise_exception=True)
-def batch_pcb_delete(request, pcb_id):
+def batch_pcb_delete(request, batch_id, pcb_id):
     """Delete a PCB"""
     if request.method == 'POST':
         try:
-            pcb = get_object_or_404(Pcb, pk=pcb_id)
+            pcb = get_object_or_404(Pcb, pk=pcb_id, batch_id=batch_id)
             pcb_serial = pcb.serial_number
-            batch_id = pcb.batch.id
             pcb.delete()
             messages.success(request, f'PCB "{pcb_serial}" deleted successfully.')
             return redirect('batch_detail', pk=batch_id)
         except Exception as e:
             messages.error(request, f'Error deleting PCB: {str(e)}')
-            return redirect('batch_detail', pk=pcb.batch.id)
+            return redirect('batch_detail', pk=batch_id)
     
-    return redirect('batch_list')
+    return redirect('batch_detail', pk=batch_id)
 
 
 @login_required
@@ -206,5 +205,77 @@ def batch_pcb_create(request):
             return redirect('batch_detail', pk=batch_id)
     
     return redirect('batch_list')
+
+
+@login_required
+@permission_required('batch_app.change_pcb', raise_exception=True)
+def batch_pcb_update(request, batch_id, pcb_id):
+    """Update an existing PCB"""
+    pcb = get_object_or_404(Pcb, id=pcb_id, batch_id=batch_id)
+    
+    if request.method == 'POST':
+        serial_number = request.POST.get('serial_number')
+        hardware_modified = request.POST.get('hardware_modified') == 'on'
+        modified_hardware_version = request.POST.get('modified_hardware_version', '')
+        
+        # Check if serial number already exists (excluding current item)
+        if Pcb.objects.filter(serial_number__iexact=serial_number).exclude(id=pcb_id).exists():
+            messages.error(request, 'A PCB with this serial number already exists.')
+            return redirect('batch_detail', pk=batch_id)
+        
+        try:
+            pcb.serial_number = serial_number
+            pcb.hardware_modified = hardware_modified
+            pcb.modified_hardware_version = modified_hardware_version if hardware_modified else None
+            pcb.save()
+            
+            messages.success(request, f'PCB "{pcb.serial_number}" updated successfully.')
+            return redirect('batch_detail', pk=batch_id)
+        except Exception as e:
+            messages.error(request, f'Error updating PCB: {str(e)}')
+            return redirect('batch_detail', pk=batch_id)
+    
+    # Return JSON for modal
+    if request.GET.get('format') == 'json':
+        return JsonResponse({
+            'id': pcb.id,
+            'serial_number': pcb.serial_number,
+            'hardware_modified': pcb.hardware_modified,
+            'modified_hardware_version': pcb.modified_hardware_version or '',
+        })
+    
+    return redirect('batch_detail', pk=batch_id)
+
+
+@login_required
+@permission_required('batch_app.delete_pcb', raise_exception=True)
+def batch_pcb_delete(request, batch_id, pcb_id):
+    """Delete a PCB"""
+    pcb = get_object_or_404(Pcb, id=pcb_id, batch_id=batch_id)
+    
+    if request.method == 'POST':
+        # Check if confirmation serial number matches
+        confirm_serial = request.POST.get('confirm_name', '')
+        if confirm_serial != pcb.serial_number:
+            messages.error(request, 'Confirmation serial number does not match. Deletion cancelled.')
+            return redirect('batch_detail', pk=batch_id)
+        
+        pcb_serial = pcb.serial_number
+        pcb.delete()
+        messages.success(request, f'PCB "{pcb_serial}" deleted successfully.')
+        return redirect('batch_detail', pk=batch_id)
+    
+    return redirect('batch_detail', pk=batch_id)
+
+
+@login_required
+@permission_required('batch_app.view_pcb', raise_exception=True)
+def batch_pcb_detail(request, batch_id, pcb_id):
+    """View details of a specific PCB"""
+    pcb = get_object_or_404(Pcb, id=pcb_id, batch_id=batch_id)
+    context = {
+        'pcb': pcb
+    }
+    return render(request, 'batch_app/pcb_detail.html', context)
 
 

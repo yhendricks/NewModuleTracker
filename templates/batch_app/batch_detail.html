@@ -284,13 +284,13 @@
     // View PCB functionality
     function viewPcb(id) {
         // Redirect to the detail view
-        window.location.href = `/batch/pcb/${id}/`;
+        window.location.href = `/batch/{{ batch.id }}/pcb/${id}/`;
     }
     
     // Edit PCB functionality
     async function editPcb(id) {
         try {
-            const response = await fetch(`/batch/pcb/update/${id}/?format=json`);
+            const response = await fetch(`/batch/{{ batch.id }}/pcb/update/${id}/?format=json`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -311,7 +311,7 @@
             }
             
             // Update the form action to point to the correct URL
-            document.getElementById('editPcbForm').action = `/batch/pcb/update/${id}/`;
+            document.getElementById('editPcbForm').action = `/batch/{{ batch.id }}/pcb/update/${id}/`;
         } catch (error) {
             console.error('Error fetching PCB data:', error);
             alert('Error fetching PCB data: ' + error.message);
@@ -330,7 +330,7 @@
         document.getElementById('confirmDeleteBtn').disabled = true;
         
         // Update the form action to point to the correct URL
-        document.getElementById('deletePcbForm').action = `/batch/pcb/delete/${id}/`;
+        document.getElementById('deletePcbForm').action = `/batch/{{ batch.id }}/pcb/delete/${id}/`;
     }
     
     // Handle delete confirmation input
