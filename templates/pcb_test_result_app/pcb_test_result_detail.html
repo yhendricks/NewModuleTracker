@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Result Details - {{ test_result.pcb.serial_number }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Test Result Details</h2>
+    <div>
+        {% if perms.pcb_test_result_app.change_pcbtestresult %}
+            <a href="{% url 'pcb_test_result_update' test_result.pk %}" class="btn btn-outline-secondary me-2">Edit</a>
+        {% endif %}
+        <a href="{% url 'pcb_test_result_list' %}" class="btn btn-outline-secondary">Back to List</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">PCB Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <th>Serial Number</th>
+                        <td>{{ test_result.pcb.serial_number }}</td>
+                    </tr>
+                    <tr>
+                        <th>Batch</th>
+                        <td>{{ test_result.pcb.batch.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>PCB Type</th>
+                        <td>{{ test_result.pcb.batch.pcb_type.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Hardware Version</th>
+                        <td>{{ test_result.pcb.effective_hardware_version }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Test Information</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <th>Technician</th>
+                        <td>{{ test_result.technician.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>Test Date</th>
+                        <td>{{ test_result.test_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>Overall Result</th>
+                        <td>
+                            {% if test_result.result == 'PASSED' %}
+                                <span class="badge bg-success">Passed</span>
+                            {% elif test_result.result == 'FAILED' %}
+                                <span class="badge bg-danger">Failed</span>
+                            {% else %}
+                                <span class="badge bg-warning">Incomplete</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Notes</th>
+                        <td>{{ test_result.notes|default:"No notes" }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Voltage Measurements -->
+{% if test_result.voltage_measurements.all %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Voltage Measurements</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Measured Value</th>
+                            <th>Min Value</th>
+                            <th>Max Value</th>
+                            <th>Unit</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for measurement in test_result.voltage_measurements.all %}
+                            <tr>
+                                <td>{{ measurement.parameter_name }}</td>
+                                <td>{{ measurement.measured_value }}</td>
+                                <td>{{ measurement.min_value }}</td>
+                                <td>{{ measurement.max_value }}</td>
+                                <td>{{ measurement.unit }}</td>
+                                <td>
+                                    {% if measurement.passed %}
+                                        <span class="badge bg-success">Pass</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Fail</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Current Measurements -->
+{% if test_result.current_measurements.all %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Current Measurements</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Measured Value</th>
+                            <th>Min Value</th>
+                            <th>Max Value</th>
+                            <th>Unit</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for measurement in test_result.current_measurements.all %}
+                            <tr>
+                                <td>{{ measurement.parameter_name }}</td>
+                                <td>{{ measurement.measured_value }}</td>
+                                <td>{{ measurement.min_value }}</td>
+                                <td>{{ measurement.max_value }}</td>
+                                <td>{{ measurement.unit }}</td>
+                                <td>
+                                    {% if measurement.passed %}
+                                        <span class="badge bg-success">Pass</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Fail</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Resistance Measurements -->
+{% if test_result.resistance_measurements.all %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Resistance Measurements</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Measured Value</th>
+                            <th>Min Value</th>
+                            <th>Max Value</th>
+                            <th>Unit</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for measurement in test_result.resistance_measurements.all %}
+                            <tr>
+                                <td>{{ measurement.parameter_name }}</td>
+                                <td>{{ measurement.measured_value }}</td>
+                                <td>{{ measurement.min_value }}</td>
+                                <td>{{ measurement.max_value }}</td>
+                                <td>{{ measurement.unit }}</td>
+                                <td>
+                                    {% if measurement.passed %}
+                                        <span class="badge bg-success">Pass</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Fail</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Frequency Measurements -->
+{% if test_result.frequency_measurements.all %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Frequency Measurements</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Measured Value</th>
+                            <th>Min Value</th>
+                            <th>Max Value</th>
+                            <th>Unit</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for measurement in test_result.frequency_measurements.all %}
+                            <tr>
+                                <td>{{ measurement.parameter_name }}</td>
+                                <td>{{ measurement.measured_value }}</td>
+                                <td>{{ measurement.min_value }}</td>
+                                <td>{{ measurement.max_value }}</td>
+                                <td>{{ measurement.unit }}</td>
+                                <td>
+                                    {% if measurement.passed %}
+                                        <span class="badge bg-success">Pass</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Fail</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Yes/No Questions -->
+{% if test_result.yes_no_questions.all %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Yes/No Questions</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>User Answer</th>
+                            <th>Required Answer</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for question in test_result.yes_no_questions.all %}
+                            <tr>
+                                <td>{{ question.question_text }}</td>
+                                <td>{{ question.user_answer|yesno:"Yes,No" }}</td>
+                                <td>{{ question.required_answer|yesno:"Yes,No" }}</td>
+                                <td>
+                                    {% if question.passed %}
+                                        <span class="badge bg-success">Pass</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Fail</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Instructions -->
+{% if test_result.instructions.all %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Instructions</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Instruction</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for instruction in test_result.instructions.all %}
+                            <tr>
+                                <td>{{ instruction.instruction_text }}</td>
+                                <td>
+                                    {% if instruction.acknowledged %}
+                                        <span class="badge bg-success">Acknowledged</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- General Notes for the Test Result -->
+{% if test_result.notes %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Test Result Notes</h5>
+        </div>
+        <div class="card-body">
+            <p>{{ test_result.notes }}</p>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Add PCB Test Result{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Add PCB Test Result</h2>
+    <a href="{% url 'pcb_test_result_list' %}" class="btn btn-secondary">Back to List</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form id="addTestResultForm" method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="add_pcb" class="form-label">Select PCB</label>
+                <select class="form-select" id="add_pcb" name="pcb_id" required>
+                    <option value="">Select PCB</option>
+                    {% for pcb in pcbs %}
+                        <option value="{{ pcb.id }}">{{ pcb.serial_number }} ({{ pcb.batch.name }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="mb-3">
+                <label for="add_notes" class="form-label">Notes</label>
+                <textarea class="form-control" id="add_notes" name="notes" rows="3" placeholder="Any additional notes about this test..."></textarea>
+            </div>
+            
+            <!-- Dynamic Test Steps Section -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Test Steps</h5>
+                </div>
+                <div class="card-body">
+                    <div id="test-steps-container">
+                        <!-- Test steps will be dynamically loaded here based on selected PCB -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <button type="submit" class="btn btn-primary">Save Test Result</button>
+                <a href="{% url 'pcb_test_result_list' %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Handle PCB selection to load test steps
+    document.getElementById('add_pcb').addEventListener('change', async function() {
+        const pcbId = this.value;
+        const container = document.getElementById('test-steps-container');
+        
+        if (!pcbId) {
+            container.innerHTML = '<p class="text-muted">Please select a PCB to load its test steps.</p>';
+            return;
+        }
+        
+        try {
+            // Show loading indicator
+            container.innerHTML = '<p class="text-muted">Loading test steps...</p>';
+            
+            // Fetch test steps for the selected PCB
+            const response = await fetch(`/pcb_test_result/get_test_steps/${pcbId}/`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            
+            // Generate form fields based on test steps
+            let html = '';
+            data.steps.forEach((step, index) => {
+                html += generateStepHtml(step, index);
+            });
+            
+            container.innerHTML = html;
+            
+            // Add event listeners for dynamic fields
+            addDynamicFieldListeners();
+        } catch (error) {
+            console.error('Error fetching test steps:', error);
+            container.innerHTML = `<p class="text-danger">Error loading test steps: ${error.message}</p>`;
+        }
+    });
+    
+    // Generate HTML for a test step
+    function generateStepHtml(step, index) {
+        let html = `
+            <div class="step mb-3 p-3 border rounded">
+                <div class="row">
+                    <div class="col-md-1">
+                        <strong>${step.order}.</strong>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge bg-primary">${step.get_step_type_display}</span>
+                    </div>
+                    <div class="col-md-9">
+        `;
+        
+        if (step.step_type === 'VOLTAGE' || step.step_type === 'CURRENT' || 
+            step.step_type === 'RESISTANCE' || step.step_type === 'FREQUENCY') {
+            const label = step.step_type === 'VOLTAGE' ? 'Voltage' : 
+                         step.step_type === 'CURRENT' ? 'Current' : 
+                         step.step_type === 'RESISTANCE' ? 'Resistance' : 'Frequency';
+            const unit = step.unit || (step.step_type === 'VOLTAGE' ? 'V' : 
+                                     step.step_type === 'CURRENT' ? 'A' : 
+                                     step.step_type === 'RESISTANCE' ? 'Ω' : 'Hz');
+            
+            html += `
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">${step.parameter_name}</label>
+                        <input type="text" class="form-control" name="${step.step_type.toLowerCase()}_param_name_${index}" value="${step.parameter_name}" readonly>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Measured Value</label>
+                        <input type="number" step="any" class="form-control" name="${step.step_type.toLowerCase()}_measured_${index}" placeholder="Measured value" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Min</label>
+                        <input type="number" step="any" class="form-control" name="${step.step_type.toLowerCase()}_min_${index}" value="${step.min_value}" readonly>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Max</label>
+                        <input type="number" step="any" class="form-control" name="${step.step_type.toLowerCase()}_max_${index}" value="${step.max_value}" readonly>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Unit</label>
+                        <select class="form-select" name="${step.step_type.toLowerCase()}_unit_${index}" readonly>
+                            <option value="${unit}" selected>${unit}</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        } else if (step.step_type === 'QUESTION') {
+            html += `
+                <div class="row">
+                    <div class="col-md-8">
+                        <label class="form-label">${step.question_text}</label>
+                        <input type="text" class="form-control" name="question_text_${index}" value="${step.question_text}" readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Answer</label>
+                        <select class="form-select" name="question_user_answer_${index}" required>
+                            <option value="">Select Answer</option>
+                            <option value="true">Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                        <input type="hidden" name="question_required_${index}" value="${step.required_answer}">
+                    </div>
+                </div>
+            `;
+        } else if (step.step_type === 'INSTRUCTION') {
+            html += `
+                <div class="row">
+                    <div class="col-md-10">
+                        <label class="form-label">${step.instruction_text}</label>
+                        <textarea class="form-control" name="instruction_text_${index}" placeholder="Instructions for the user" rows="2" readonly>${step.instruction_text}</textarea>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Acknowledged</label>
+                        <select class="form-select" name="instruction_acknowledged_${index}" required>
+                            <option value="">Select</option>
+                            <option value="true">Acknowledged</option>
+                            <option value="false">Not Acknowledged</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        return html;
+    }
+    
+    // Add event listeners for dynamic fields
+    function addDynamicFieldListeners() {
+        // Add any necessary event listeners here
+    }
+    
+    // Handle form submission
+    document.getElementById('addTestResultForm').addEventListener('submit', function(e) {
+        // Add any form validation here if needed
+    });
+</script>
+{% endblock %}

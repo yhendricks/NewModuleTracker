@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Test Results for PCB: {{ pcb.serial_number }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Test Results for PCB: {{ pcb.serial_number }}</h2>
+    <div>
+        <a href="{% url 'pcb_test_result_create' %}" class="btn btn-primary">Add New Test Result</a>
+        <a href="{% url 'pcb_test_result_list' %}" class="btn btn-secondary">Back to All Results</a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">PCB Information</h5>
+        <table class="table table-sm">
+            <tr>
+                <th>Serial Number</th>
+                <td>{{ pcb.serial_number }}</td>
+            </tr>
+            <tr>
+                <th>Batch</th>
+                <td>{{ pcb.batch.name }}</td>
+            </tr>
+            <tr>
+                <th>PCB Type</th>
+                <td>{{ pcb.batch.pcb_type.name }}</td>
+            </tr>
+            <tr>
+                <th>Hardware Version</th>
+                <td>{{ pcb.effective_hardware_version }}</td>
+            </tr>
+            <tr>
+                <th>Created At</th>
+                <td>{{ pcb.created_at }}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Test Results</h5>
+            </div>
+            <div class="card-body">
+                {% if test_results %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Test Date</th>
+                                    <th>Technician</th>
+                                    <th>Result</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for result in test_results %}
+                                    <tr>
+                                        <td>{{ result.test_date }}</td>
+                                        <td>{{ result.technician.username }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if result.result == 'PASSED' %}bg-success
+                                                {% elif result.result == 'FAILED' %}bg-danger
+                                                {% else %}bg-warning{% endif %}">
+                                                {{ result.get_result_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ result.notes|truncatechars:50|default:"No notes" }}</td>
+                                        <td>
+                                            <a href="{% url 'pcb_test_result_detail' result.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No test results found for this PCB.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

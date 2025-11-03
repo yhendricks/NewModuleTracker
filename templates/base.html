@@ -45,6 +45,21 @@
                                 {% endif %}
                             </ul>
                         </li>
+                        
+                        <!-- PCB Test Results Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="pcbTestResultsDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-clipboard-check"></i> PCB Test Results
+                            </a>
+                            <ul class="dropdown-menu">
+                                {% if perms.pcb_test_result_app.add_pcbtestresult %}
+                                    <li><a class="dropdown-item" href="{% url 'pcb_test_result_create' %}">Add Test Result</a></li>
+                                {% endif %}
+                                {% if perms.pcb_test_result_app.view_pcbtestresult %}
+                                    <li><a class="dropdown-item" href="{% url 'pcb_test_result_list' %}">View All Test Results</a></li>
+                                {% endif %}
+                            </ul>
+                        </li>
                     {% endif %}
                 </ul>
                 
