@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'test_config_type_app',  # Test Config Type app
     'batch_app',  # Batch management app
     'pcb_test_result_app',  # PCB Test Result app
+    'module_app', # Module app
+    'module_config_type_app', # Module  config type app
     'django_htmx',  # HTMX support
 ]
 

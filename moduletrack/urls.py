@@ -44,4 +44,6 @@ urlpatterns = [
     path('test_config_type/', include('test_config_type_app.urls')),
     path('batch/', include('batch_app.urls')),
     path('pcb_test_result/', include('pcb_test_result_app.urls')),
+    path('module_config_type/', include('module_config_type_app.urls')),
+    path('module/', include('module_app.urls')),
 ]
