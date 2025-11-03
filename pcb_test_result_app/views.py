@@ -13,7 +13,17 @@ from django.contrib.auth.models import User, Group
 @permission_required('pcb_test_result_app.view_pcbtestresult', raise_exception=True)
 def pcb_test_result_list(request):
     """Display list of PCB Test Results with search and filtering"""
-    test_results = PcbTestResult.objects.all().order_by('-test_date')
+    # Get the ordering parameter from the request
+    order_by = request.GET.get('order_by', '-test_date')  # Default to descending date
+    
+    # Define valid ordering fields to prevent injection
+    valid_order_fields = ['test_date', '-test_date', 'pcb__serial_number', '-pcb__serial_number', 
+                          'technician__username', '-technician__username', 'result', '-result']
+    
+    if order_by not in valid_order_fields:
+        order_by = '-test_date'  # Default if invalid field provided
+    
+    test_results = PcbTestResult.objects.all().order_by(order_by)
     
     # Handle search/filter
     search_query = request.GET.get('search', '')
@@ -45,6 +55,7 @@ def pcb_test_result_list(request):
         'technician_id': technician_id,
         'pcbs': pcbs,
         'technicians': technicians,
+        'current_order': order_by,  # Pass current order to template
     }
     return render(request, 'pcb_test_result_app/pcb_test_result_list.html', context)
 
