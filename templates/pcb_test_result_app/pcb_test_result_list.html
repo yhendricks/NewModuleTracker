@@ -62,7 +62,7 @@
                             <th scope="col"><a href="?{% if current_order == 'technician__username' %}order_by=-technician__username{% else %}order_by=technician__username{% endif %}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}{% if pcb_id %}&pcb_id={{ pcb_id }}{% endif %}{% if technician_id %}&technician_id={{ technician_id }}{% endif %}">Technician {% if current_order == 'technician__username' %}↑{% elif current_order == '-technician__username' %}↓{% endif %}</a></th>
                             <th scope="col"><a href="?{% if current_order == 'test_date' %}order_by=-test_date{% else %}order_by=test_date{% endif %}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}{% if pcb_id %}&pcb_id={{ pcb_id }}{% endif %}{% if technician_id %}&technician_id={{ technician_id }}{% endif %}">Test Date {% if current_order == 'test_date' %}↑{% elif current_order == '-test_date' %}↓{% endif %}</a></th>
                             <th scope="col"><a href="?{% if current_order == 'result' %}order_by=-result{% else %}order_by=result{% endif %}{% if search_query %}&search={{ search_query|urlencode }}{% endif %}{% if pcb_id %}&pcb_id={{ pcb_id }}{% endif %}{% if technician_id %}&technician_id={{ technician_id }}{% endif %}">Result {% if current_order == 'result' %}↑{% elif current_order == '-result' %}↓{% endif %}</a></th>
-                            <th scope="col">Notes</th>
+                            <th scope="col">QA Signoff</th>
                             <th scope="col">Actions</th>
                         </tr>
                     </thead>
@@ -81,7 +81,15 @@
                                         <span class="badge bg-warning">Incomplete</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ test_result.notes|default:"-"|truncatewords:10 }}</td>
+                                <td>
+                                    {% if test_result.qa_signoff %}
+                                        <span class="badge bg-success">Signed Off</span>
+                                        <br>
+                                        <small class="text-muted">by {{ test_result.qa_signoff.qa_user.username }} on {{ test_result.qa_signoff.signed_off_at|date:"M d, Y" }}</small>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Pending</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <div class="btn-group" role="group">
                                         <button type="button" class="btn btn-sm btn-outline-primary" 
@@ -93,6 +101,14 @@
                                                     onclick="editTestResult({{ test_result.id }})">
                                                 <i class="bi bi-pencil"></i>
                                             </button>
+                                        {% endif %}
+                                        {% load pcb_test_extras %}
+                                        {% if user|has_group:"qa_signoff_board_bringup_result" or user.is_superuser %}
+                                            <a href="{% url 'qa_signoff_pcb_test' test_result.pk %}" 
+                                               class="btn btn-sm btn-outline-success" 
+                                               title="QA Signoff">
+                                                <i class="bi bi-check-circle"></i>
+                                            </a>
                                         {% endif %}
                                         {% if perms.pcb_test_result_app.delete_pcbtestresult %}
                                             <button type="button" class="btn btn-sm btn-outline-danger" 

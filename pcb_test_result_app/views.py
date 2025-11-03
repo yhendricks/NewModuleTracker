@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
-from .models import PcbTestResult, VoltageMeasurementResult, CurrentMeasurementResult, ResistanceMeasurementResult, FrequencyMeasurementResult, YesNoQuestionResult, InstructionResult
+from .models import PcbTestResult, VoltageMeasurementResult, CurrentMeasurementResult, ResistanceMeasurementResult, FrequencyMeasurementResult, YesNoQuestionResult, InstructionResult, QaSignoff
 from batch_app.models import Pcb, Batch
 from test_config_type_app.models import TestConfigType, TestStep
 from django.contrib.auth.models import User, Group
@@ -23,7 +23,7 @@ def pcb_test_result_list(request):
     if order_by not in valid_order_fields:
         order_by = '-test_date'  # Default if invalid field provided
     
-    test_results = PcbTestResult.objects.all().order_by(order_by)
+    test_results = PcbTestResult.objects.select_related('pcb', 'technician', 'qa_signoff', 'qa_signoff__qa_user').order_by(order_by)
     
     # Handle search/filter
     search_query = request.GET.get('search', '')
@@ -313,8 +313,64 @@ def pcb_test_result_detail(request, pk):
     """View details of a specific PCB Test Result"""
     test_result = get_object_or_404(PcbTestResult, pk=pk)
     
+    # Get QA signoff if it exists
+    try:
+        qa_signoff = test_result.qa_signoff
+    except QaSignoff.DoesNotExist:
+        qa_signoff = None
+    
+    # Check if all tests have passed
+    all_tests_passed = True
+    
+    # Check voltage measurements
+    total_voltage = test_result.voltage_measurements.count()
+    passed_voltage = test_result.voltage_measurements.filter(passed=True).count()
+    if passed_voltage != total_voltage:
+        all_tests_passed = False
+    
+    # Check current measurements
+    total_current = test_result.current_measurements.count()
+    passed_current = test_result.current_measurements.filter(passed=True).count()
+    if passed_current != total_current:
+        all_tests_passed = False
+    
+    # Check resistance measurements
+    total_resistance = test_result.resistance_measurements.count()
+    passed_resistance = test_result.resistance_measurements.filter(passed=True).count()
+    if passed_resistance != total_resistance:
+        all_tests_passed = False
+    
+    # Check frequency measurements
+    total_frequency = test_result.frequency_measurements.count()
+    passed_frequency = test_result.frequency_measurements.filter(passed=True).count()
+    if passed_frequency != total_frequency:
+        all_tests_passed = False
+    
+    # Check yes/no questions
+    total_questions = test_result.yes_no_questions.count()
+    passed_questions = test_result.yes_no_questions.filter(passed=True).count()
+    if passed_questions != total_questions:
+        all_tests_passed = False
+    
+    # Check instructions
+    total_instructions = test_result.instructions.count()
+    passed_instructions = test_result.instructions.filter(acknowledged=True).count()
+    if passed_instructions != total_instructions:
+        all_tests_passed = False
+    
     context = {
         'test_result': test_result,
+        'qa_signoff': qa_signoff,
+        'can_qa_signoff': request.user.groups.filter(name='qa_signoff_board_bringup_result').exists() or request.user.is_superuser,
+        'all_tests_passed': all_tests_passed,
+        'test_counts': {
+            'voltage': {'total': total_voltage, 'passed': passed_voltage},
+            'current': {'total': total_current, 'passed': passed_current},
+            'resistance': {'total': total_resistance, 'passed': passed_resistance},
+            'frequency': {'total': total_frequency, 'passed': passed_frequency},
+            'questions': {'total': total_questions, 'passed': passed_questions},
+            'instructions': {'total': total_instructions, 'passed': passed_instructions},
+        }
     }
     return render(request, 'pcb_test_result_app/pcb_test_result_detail.html', context)
 
@@ -634,6 +690,153 @@ def create_pcb_test_result_management_group():
     """Create the add_board_bringup_result group with proper permissions"""
     pcb_test_result_group, created = Group.objects.get_or_create(name='add_board_bringup_result')
     return pcb_test_result_group
+
+
+@login_required
+@permission_required('pcb_test_result_app.view_pcbtestresult', raise_exception=True)
+def qa_search_pcb(request):
+    """Search for PCBs to sign off on"""
+    # Check if user is in the QA group or is a superuser
+    if not (request.user.groups.filter(name='qa_signoff_board_bringup_result').exists() or request.user.is_superuser):
+        messages.error(request, "You don't have permission to access QA signoffs.")
+        return redirect('pcb_test_result_list')
+    
+    # Get all PCBs for search
+    if request.method == 'POST':
+        search_query = request.POST.get('search', '')
+        if search_query:
+            # Search for PCBs by serial number
+            pcbs = Pcb.objects.filter(
+                serial_number__icontains=search_query
+            ).select_related('batch').order_by('-created_at')[:50]  # Limit to 50 results
+        else:
+            pcbs = []
+    else:
+        pcbs = []
+    
+    context = {
+        'pcbs': pcbs,
+    }
+    return render(request, 'pcb_test_result_app/qa_search_pcb.html', context)
+
+
+@login_required
+@permission_required('pcb_test_result_app.view_pcbtestresult', raise_exception=True)
+def qa_signoff_pcb_test(request, pk):
+    """View to sign off on a specific PCB test result"""
+    # Check if user is in the QA group or is a superuser
+    if not (request.user.groups.filter(name='qa_signoff_board_bringup_result').exists() or request.user.is_superuser):
+        messages.error(request, "You don't have permission to perform QA signoffs.")
+        return redirect('pcb_test_result_list')
+    
+    test_result = get_object_or_404(PcbTestResult, pk=pk)
+    pcb = test_result.pcb
+    
+    if not test_result:
+        messages.error(request, f"No test results found for PCB {pcb_serial_number}")
+        return redirect('qa_search_pcb')
+    
+    # Check if there's already a QA signoff for this test result
+    try:
+        existing_signoff = test_result.qa_signoff
+    except QaSignoff.DoesNotExist:
+        existing_signoff = None
+    
+    if request.method == 'POST' and not existing_signoff:
+        # Check if all steps passed
+        all_passed = True
+        
+        # Check measurements
+        for measurement in (list(test_result.voltage_measurements.all()) +
+                           list(test_result.current_measurements.all()) +
+                           list(test_result.resistance_measurements.all()) +
+                           list(test_result.frequency_measurements.all())):
+            if not measurement.passed:
+                all_passed = False
+                break
+        
+        # Check questions
+        if all_passed:
+            for question in test_result.yes_no_questions.all():
+                if not question.passed:
+                    all_passed = False
+                    break
+        
+        # Check instructions
+        if all_passed:
+            for instruction in test_result.instructions.all():
+                if not instruction.acknowledged:
+                    all_passed = False
+                    break
+        
+        if not all_passed:
+            messages.error(request, "Cannot sign off: Not all test steps have passed.")
+        else:
+            # Create QA signoff
+            qa_notes = request.POST.get('qa_notes', '').strip()
+            QaSignoff.objects.create(
+                test_result=test_result,
+                qa_user=request.user,
+                qa_notes=qa_notes if qa_notes else None,
+                is_signed_off=True
+            )
+            messages.success(request, f"Successfully signed off on test result for {pcb.serial_number}")
+            return redirect('pcb_test_result_detail', pk=test_result.pk)
+    
+    # Check if all tests have passed
+    all_tests_passed = True
+    
+    # Check voltage measurements
+    total_voltage = test_result.voltage_measurements.count()
+    passed_voltage = test_result.voltage_measurements.filter(passed=True).count()
+    if passed_voltage != total_voltage:
+        all_tests_passed = False
+    
+    # Check current measurements
+    total_current = test_result.current_measurements.count()
+    passed_current = test_result.current_measurements.filter(passed=True).count()
+    if passed_current != total_current:
+        all_tests_passed = False
+    
+    # Check resistance measurements
+    total_resistance = test_result.resistance_measurements.count()
+    passed_resistance = test_result.resistance_measurements.filter(passed=True).count()
+    if passed_resistance != total_resistance:
+        all_tests_passed = False
+    
+    # Check frequency measurements
+    total_frequency = test_result.frequency_measurements.count()
+    passed_frequency = test_result.frequency_measurements.filter(passed=True).count()
+    if passed_frequency != total_frequency:
+        all_tests_passed = False
+    
+    # Check yes/no questions
+    total_questions = test_result.yes_no_questions.count()
+    passed_questions = test_result.yes_no_questions.filter(passed=True).count()
+    if passed_questions != total_questions:
+        all_tests_passed = False
+    
+    # Check instructions
+    total_instructions = test_result.instructions.count()
+    passed_instructions = test_result.instructions.filter(acknowledged=True).count()
+    if passed_instructions != total_instructions:
+        all_tests_passed = False
+
+    context = {
+        'pcb': pcb,
+        'test_result': test_result,
+        'existing_signoff': existing_signoff,
+        'all_tests_passed': all_tests_passed,
+        'test_counts': {
+            'voltage': {'total': total_voltage, 'passed': passed_voltage},
+            'current': {'total': total_current, 'passed': passed_current},
+            'resistance': {'total': total_resistance, 'passed': passed_resistance},
+            'frequency': {'total': total_frequency, 'passed': passed_frequency},
+            'questions': {'total': total_questions, 'passed': passed_questions},
+            'instructions': {'total': total_instructions, 'passed': passed_instructions},
+        }
+    }
+    return render(request, 'pcb_test_result_app/qa_signoff_pcb_test.html', context)
 
 
 # Call the function to create the group

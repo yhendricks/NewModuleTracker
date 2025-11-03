@@ -60,6 +60,19 @@
                                 {% endif %}
                             </ul>
                         </li>
+                        
+                        <!-- QA Signoff Dropdown -->
+                        {% load pcb_test_extras %}
+                        {% if user|has_group:"qa_signoff_board_bringup_result" %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="qaSignoffDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-check-circle"></i> QA Signoff
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'qa_search_pcb' %}">Search PCB for Signoff</a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
                     {% endif %}
                 </ul>
                 

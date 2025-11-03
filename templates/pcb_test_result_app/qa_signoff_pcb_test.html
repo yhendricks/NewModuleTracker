@@ -1,15 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}Test Result Details - {{ test_result.pcb.serial_number }}{% endblock %}
+{% block title %}QA Signoff - {{ pcb.serial_number }}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Test Result Details</h2>
+    <h2>QA Signoff for {{ pcb.serial_number }}</h2>
     <div>
-        {% if perms.pcb_test_result_app.change_pcbtestresult %}
-            <a href="{% url 'pcb_test_result_update' test_result.pk %}" class="btn btn-outline-secondary me-2">Edit</a>
-        {% endif %}
-        <a href="{% url 'pcb_test_result_list' %}" class="btn btn-outline-secondary">Back to List</a>
+        <a href="{% url 'qa_search_pcb' %}" class="btn btn-outline-secondary">Back to Search</a>
+        <a href="{% url 'pcb_test_result_detail' test_result.pk %}" class="btn btn-outline-secondary">View Full Details</a>
     </div>
 </div>
 
@@ -23,19 +21,19 @@
                 <table class="table table-sm">
                     <tr>
                         <th>Serial Number</th>
-                        <td>{{ test_result.pcb.serial_number }}</td>
+                        <td>{{ pcb.serial_number }}</td>
                     </tr>
                     <tr>
                         <th>Batch</th>
-                        <td>{{ test_result.pcb.batch.name }}</td>
+                        <td>{{ pcb.batch.name }}</td>
                     </tr>
                     <tr>
                         <th>PCB Type</th>
-                        <td>{{ test_result.pcb.batch.pcb_type.name }}</td>
+                        <td>{{ pcb.batch.pcb_type.name }}</td>
                     </tr>
                     <tr>
                         <th>Hardware Version</th>
-                        <td>{{ test_result.pcb.effective_hardware_version }}</td>
+                        <td>{{ pcb.effective_hardware_version }}</td>
                     </tr>
                 </table>
             </div>
@@ -79,80 +77,79 @@
     </div>
 </div>
 
-<!-- QA Signoff Section - Only show if user is in the QA group -->
-{% if perms.pcb_test_result_app.view_qasignoff and can_qa_signoff %}
+<!-- QA Signoff Section -->
+{% if existing_signoff %}
     <div class="card mb-4">
         <div class="card-header">
-            <h5 class="card-title mb-0">QA Signoff</h5>
+            <h5 class="card-title mb-0">QA Signoff Information</h5>
         </div>
         <div class="card-body">
-            {% if qa_signoff %}
-                <div class="row">
-                    <div class="col-md-6">
-                        <p><strong>QA Signoff Status:</strong> 
-                            <span class="badge bg-success">Signed Off</span>
-                        </p>
-                        <p><strong>QA User:</strong> {{ qa_signoff.qa_user.username }}</p>
-                        <p><strong>Signed Off At:</strong> {{ qa_signoff.signed_off_at|default:"N/A" }}</p>
-                    </div>
-                    <div class="col-md-6">
-                        {% if qa_signoff.qa_notes %}
-                            <p><strong>QA Notes:</strong></p>
-                            <p>{{ qa_signoff.qa_notes }}</p>
-                        {% else %}
-                            <p><strong>QA Notes:</strong> No notes provided</p>
-                        {% endif %}
-                    </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>QA Signoff Status:</strong> 
+                        <span class="badge bg-success">Signed Off</span>
+                    </p>
+                    <p><strong>QA User:</strong> {{ existing_signoff.qa_user.username }}</p>
+                    <p><strong>Signed Off At:</strong> {{ existing_signoff.signed_off_at|default:"N/A" }}</p>
                 </div>
-            {% else %}
-                <!-- Check if all tests passed before allowing signoff -->
-                {% with test_result.voltage_measurements.all as voltage_results %}
-                {% with test_result.current_measurements.all as current_results %}
-                {% with test_result.resistance_measurements.all as resistance_results %}
-                {% with test_result.frequency_measurements.all as frequency_results %}
-                {% with test_result.yes_no_questions.all as question_results %}
-                {% with test_result.instructions.all as instruction_results %}
-                
-                {% regroup voltage_results|dictsort:"passed" by passed as measurement_groups %}
-                {% regroup question_results|dictsort:"passed" by passed as question_groups %}
-                {% regroup instruction_results|dictsort:"acknowledged" by acknowledged as instruction_groups %}
-                
-                <!-- Check if all tests passed before allowing signoff -->
-                {% if all_tests_passed %}
-                    <div class="row">
-                        <div class="col-md-12">
-                            <form method="post" action="{% url 'qa_signoff_pcb_test' test_result.pk %}">
-                                {% csrf_token %}
-                                <div class="mb-3">
-                                    <label for="qa_notes" class="form-label">QA Notes (optional)</label>
-                                    <textarea class="form-control" id="qa_notes" name="qa_notes" rows="3" 
-                                              placeholder="Add any QA notes about this test result..."></textarea>
-                                </div>
-                                <button type="submit" class="btn btn-success">Sign Off Test Result</button>
-                                <p class="mt-2 text-muted">All tests have passed. You can now sign off on this test result.</p>
-                            </form>
-                        </div>
-                    </div>
-                {% else %}
-                    <div class="alert alert-warning" role="alert">
-                        <p><strong>Cannot Sign Off:</strong> Not all tests have passed.</p>
-                        <p>Passing: {{ test_counts.voltage.passed }}/{{ test_counts.voltage.total }} voltage, 
-                           {{ test_counts.current.passed }}/{{ test_counts.current.total }} current, 
-                           {{ test_counts.resistance.passed }}/{{ test_counts.resistance.total }} resistance, 
-                           {{ test_counts.frequency.passed }}/{{ test_counts.frequency.total }} frequency, 
-                           {{ test_counts.questions.passed }}/{{ test_counts.questions.total }} questions, 
-                           {{ test_counts.instructions.passed }}/{{ test_counts.instructions.total }} instructions</p>
-                    </div>
-                {% endif %}
-                {% endwith %}
-                {% endwith %}
-                {% endwith %}
-                {% endwith %}
-                {% endwith %}
-                {% endwith %}
-            {% endif %}
+                <div class="col-md-6">
+                    {% if existing_signoff.qa_notes %}
+                        <p><strong>QA Notes:</strong></p>
+                        <p>{{ existing_signoff.qa_notes }}</p>
+                    {% else %}
+                        <p><strong>QA Notes:</strong> No notes provided</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="alert alert-info">
+                This test result has already been signed off by a QA staff member.
+            </div>
         </div>
     </div>
+{% else %}
+    <!-- Check if all tests passed before allowing signoff -->
+    {% if all_tests_passed %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">QA Signoff</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="qa_notes" class="form-label fw-bold">QA Notes (optional)</label>
+                        <textarea class="form-control" id="qa_notes" name="qa_notes" rows="4" 
+                                  placeholder="Add any QA notes about this test result..."></textarea>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'qa_search_pcb' %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success btn-lg px-4">Sign Off Test Result</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">QA Signoff</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning" role="alert">
+                    <h5 class="alert-heading">Cannot Sign Off!</h5>
+                    <p>Not all tests have passed, so signoff is not allowed:</p>
+                    <ul class="mb-0">
+                        <li>Passing voltage measurements: {{ test_counts.voltage.passed }}/{{ test_counts.voltage.total }}</li>
+                        <li>Passing current measurements: {{ test_counts.current.passed }}/{{ test_counts.current.total }}</li>
+                        <li>Passing resistance measurements: {{ test_counts.resistance.passed }}/{{ test_counts.resistance.total }}</li>
+                        <li>Passing frequency measurements: {{ test_counts.frequency.passed }}/{{ test_counts.frequency.total }}</li>
+                        <li>Passing questions: {{ test_counts.questions.passed }}/{{ test_counts.questions.total }}</li>
+                        <li>Completed instructions: {{ test_counts.instructions.passed }}/{{ test_counts.instructions.total }}</li>
+                    </ul>
+                    <p class="mb-0">All tests must pass before QA signoff can be performed.</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 {% endif %}
 
 <!-- Step-by-step results in chronological order -->
@@ -249,7 +246,7 @@
                                                 <p class="mb-0 text-muted small">Required: {{ measurement.min_value }} - {{ measurement.max_value }} {{ measurement.unit|default:"A" }}</p>
                                             </div>
                                             <div class="text-end">
-                                                <h5 class="mb-0">{{ measurement.measured_value|default:"N/A" }} {{ measurement.unit|default:"A" }}</h5>
+                                                <h5 class="mb-0">{{ measurement.measured_value|default:"N/A" }} {{ measurement.unit|default:"A" }}</p>
                                                 <span class="badge {% if measurement.passed %}bg-success{% else %}bg-danger{% endif %} fs-6">
                                                     {% if measurement.passed %}PASS{% else %}FAIL{% endif %}
                                                 </span>
@@ -331,17 +328,5 @@
         {% endfor %}
     </div>
 </div>
-
-<!-- General Notes for the Test Result -->
-{% if test_result.notes %}
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="card-title mb-0">Test Result Notes</h5>
-        </div>
-        <div class="card-body">
-            <p>{{ test_result.notes }}</p>
-        </div>
-    </div>
-{% endif %}
 
 {% endblock %}

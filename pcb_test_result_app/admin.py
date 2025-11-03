@@ -6,7 +6,8 @@ from .models import (
     ResistanceMeasurementResult, 
     FrequencyMeasurementResult, 
     YesNoQuestionResult, 
-    InstructionResult
+    InstructionResult,
+    QaSignoff
 )
 
 @admin.register(PcbTestResult)
@@ -57,3 +58,11 @@ class InstructionResultAdmin(admin.ModelAdmin):
     list_filter = ('acknowledged', 'created_at')
     search_fields = ('instruction_text', 'test_result__pcb__serial_number')
     readonly_fields = ('created_at',)
+
+
+@admin.register(QaSignoff)
+class QaSignoffAdmin(admin.ModelAdmin):
+    list_display = ('test_result', 'qa_user', 'is_signed_off', 'signed_off_at', 'created_at')
+    list_filter = ('is_signed_off', 'signed_off_at', 'qa_user')
+    search_fields = ('test_result__pcb__serial_number', 'qa_user__username', 'qa_notes')
+    readonly_fields = ('created_at', 'updated_at')

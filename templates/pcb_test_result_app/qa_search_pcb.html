@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}QA Search PCB{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>QA Search PCB for Signoff</h2>
+    <a href="{% url 'pcb_test_result_list' %}" class="btn btn-secondary">Back to Results</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" class="mb-4">
+            {% csrf_token %}
+            <div class="row g-3 align-items-center">
+                <div class="col-md-8">
+                    <label for="search" class="form-label">Search PCB Serial Number</label>
+                    <input type="text" class="form-control" id="search" name="search" placeholder="Enter PCB serial number..." required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <div>
+                        <button type="submit" class="btn btn-primary w-100">Search</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        
+        {% if pcbs %}
+            <h4>Search Results</h4>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>PCB Serial</th>
+                            <th>Batch</th>
+                            <th>PCB Type</th>
+                            <th>Hardware Version</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pcb in pcbs %}
+                            <tr>
+                                <td>{{ pcb.serial_number }}</td>
+                                <td>{{ pcb.batch.name }}</td>
+                                <td>{{ pcb.batch.pcb_type.name }}</td>
+                                <td>{{ pcb.effective_hardware_version }}</td>
+                                <td>
+                                    <a href="{% url 'qa_signoff_pcb_test' pcb.serial_number %}" class="btn btn-sm btn-outline-primary">View & Signoff</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% elif request.method == 'POST' %}
+            <div class="alert alert-info">No PCBs found matching your search criteria.</div>
+        {% else %}
+            <div class="alert alert-info">Enter a PCB serial number above to search for test results to sign off.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

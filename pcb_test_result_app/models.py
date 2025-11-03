@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 from batch_app.models import Pcb
 
 
@@ -148,3 +149,28 @@ class InstructionResult(models.Model):
     class Meta:
         verbose_name = "Instruction Result"
         verbose_name_plural = "Instruction Results"
+
+
+class QaSignoff(models.Model):
+    """Represents QA signoff for a PCB test result"""
+    test_result = models.OneToOneField(PcbTestResult, on_delete=models.CASCADE, related_name='qa_signoff')
+    qa_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='qa_signoffs')
+    qa_notes = models.TextField(blank=True, null=True)
+    signed_off_at = models.DateTimeField(null=True, blank=True)
+    is_signed_off = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"QA Signoff for {self.test_result.pcb.serial_number} by {self.qa_user.username}"
+
+    def save(self, *args, **kwargs):
+        if self.is_signed_off and not self.signed_off_at:
+            self.signed_off_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "QA Signoff"
+        verbose_name_plural = "QA Signoffs"
+        ordering = ['-signed_off_at']
