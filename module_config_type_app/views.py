@@ -10,12 +10,18 @@ from pcb_type_app.models import PcbType
 @login_required
 @permission_required('module_config_type_app.view_moduleconfigtype', raise_exception=True)
 def module_config_type_list(request):
-    module_config_types = ModuleConfigType.objects.all().order_by('name')
+    """Display list of Module Configuration Types with search and pagination"""
+    module_config_types = ModuleConfigType.objects.prefetch_related('moduleconfigpcb_set__pcb_type').all().order_by('name')
+    
+    # Handle search/filter
     search_query = request.GET.get('search', '')
     if search_query:
-        module_config_types = module_config_types.filter(name__icontains=search_query)
+        module_config_types = module_config_types.filter(
+            Q(name__icontains=search_query)
+        )
     
-    paginator = Paginator(module_config_types, 10)
+    # Pagination
+    paginator = Paginator(module_config_types, 10)  # Show 10 items per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
@@ -31,9 +37,11 @@ def module_config_type_list(request):
 @login_required
 @permission_required('module_config_type_app.add_moduleconfigtype', raise_exception=True)
 def module_config_type_create(request):
+    """Create a new Module Configuration Type"""
     if request.method == 'POST':
         name = request.POST.get('name')
         
+        # Check if name already exists
         if ModuleConfigType.objects.filter(name__iexact=name).exists():
             messages.error(request, 'A Module Config Type with this name already exists.')
             return redirect('module_config_type_list')
@@ -50,7 +58,7 @@ def module_config_type_create(request):
                     pcb_data[int(pcb_id)] = int(quantity)
                 except ValueError:
                     messages.error(request, 'Invalid quantity provided for a PCB.')
-                    module_config.delete() # Rollback
+                    module_config.delete()  # Rollback
                     return redirect('module_config_type_list')
 
         for pcb_id, quantity in pcb_data.items():
@@ -69,11 +77,13 @@ def module_config_type_create(request):
 @login_required
 @permission_required('module_config_type_app.change_moduleconfigtype', raise_exception=True)
 def module_config_type_update(request, pk):
+    """Update an existing Module Configuration Type"""
     module_config = get_object_or_404(ModuleConfigType, pk=pk)
 
     if request.method == 'POST':
         name = request.POST.get('name')
         
+        # Check if name already exists (excluding current item)
         if ModuleConfigType.objects.filter(name__iexact=name).exclude(pk=pk).exists():
             messages.error(request, 'A Module Config Type with this name already exists.')
             return redirect('module_config_type_list')
@@ -106,11 +116,13 @@ def module_config_type_update(request, pk):
         messages.success(request, f'Module Config Type "{module_config.name}" updated successfully.')
         return redirect('module_config_type_list')
 
+    # Return JSON for modal
     if request.GET.get('format') == 'json':
         pcbs_with_quantities = []
         for mcp in module_config.moduleconfigpcb_set.all():
             pcbs_with_quantities.append({
                 'id': mcp.pcb_type.id,
+                'name': mcp.pcb_type.name,
                 'quantity': mcp.quantity
             })
         return JsonResponse({
@@ -124,8 +136,10 @@ def module_config_type_update(request, pk):
 @login_required
 @permission_required('module_config_type_app.delete_moduleconfigtype', raise_exception=True)
 def module_config_type_delete(request, pk):
+    """Delete a Module Configuration Type"""
     module_config = get_object_or_404(ModuleConfigType, pk=pk)
     
+    # Check if confirmation name matches
     confirm_name = request.POST.get('confirm_name', '')
     if confirm_name != module_config.name:
         messages.error(request, 'Confirmation name does not match. Deletion cancelled.')
@@ -135,3 +149,18 @@ def module_config_type_delete(request, pk):
     module_config.delete()
     messages.success(request, f'Module Config Type "{module_config_name}" deleted successfully.')
     return redirect('module_config_type_list')
+
+@login_required
+@permission_required('module_config_type_app.view_moduleconfigtype', raise_exception=True)
+def module_config_type_detail(request, pk):
+    """View details of a specific Module Configuration Type"""
+    module_config = get_object_or_404(ModuleConfigType, pk=pk)
+    
+    # Get related PCBs
+    pcb_configs = module_config.moduleconfigpcb_set.all().select_related('pcb_type')
+    
+    context = {
+        'module_config': module_config,
+        'pcb_configs': pcb_configs,
+    }
+    return render(request, 'module_config_type_app/module_config_type_detail.html', context)

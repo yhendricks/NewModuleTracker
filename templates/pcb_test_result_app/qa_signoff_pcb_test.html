@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>QA Signoff for {{ pcb.serial_number }}</h2>
     <div>
-        <a href="{% url 'qa_search_pcb' %}" class="btn btn-outline-secondary">Back to Search</a>
+        <a href="{% url 'pcb_test_result_list' %}" class="btn btn-outline-secondary">Back to Search</a>
         <a href="{% url 'pcb_test_result_detail' test_result.pk %}" class="btn btn-outline-secondary">View Full Details</a>
     </div>
 </div>
@@ -122,7 +122,7 @@
                                   placeholder="Add any QA notes about this test result..."></textarea>
                     </div>
                     <div class="d-flex justify-content-between">
-                        <a href="{% url 'qa_search_pcb' %}" class="btn btn-secondary">Cancel</a>
+                        <a href="{% url 'pcb_test_result_list' %}" class="btn btn-secondary">Cancel</a>
                         <button type="submit" class="btn btn-success btn-lg px-4">Sign Off Test Result</button>
                     </div>
                 </form>

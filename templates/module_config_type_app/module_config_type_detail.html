@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Module Config: {{ module_config.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Module Configuration: {{ module_config.name }}</h2>
+        <a href="{% url 'module_config_type_list' %}" class="btn btn-secondary">Back to Configurations</a>
+    </div>
+
+    <!-- Configuration Information -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Configuration Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ module_config.name }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Created:</strong> {{ module_config.module_set.count }} modules use this configuration</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PCB Components List -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>PCB Components</h5>
+        </div>
+        <div class="card-body">
+            {% if pcb_configs %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>PCB Type</th>
+                                <th>Quantity</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pcb_config in pcb_configs %}
+                            <tr>
+                                <td>{{ pcb_config.pcb_type.name }}</td>
+                                <td>{{ pcb_config.quantity }}</td>
+                                <td>{{ pcb_config.pcb_type.description|default:"No description" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No PCB components defined for this configuration.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="d-flex gap-2">
+        {% if perms.module_config_type_app.change_moduleconfigtype %}
+        <a href="#" class="btn btn-primary" onclick="editModuleConfigType({{ module_config.id }})" data-bs-toggle="modal" data-bs-target="#editModuleConfigTypeModal">Edit Configuration</a>
+        {% endif %}
+        <a href="{% url 'module_config_type_list' %}" class="btn btn-secondary">Back to List</a>
+    </div>
+</div>
+
+<!-- Edit Module Config Type Modal (for use from detail page) -->
+{% if perms.module_config_type_app.change_moduleconfigtype %}
+<div class="modal fade" id="editModuleConfigTypeModal" tabindex="-1" aria-labelledby="editModuleConfigTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModuleConfigTypeModalLabel">Edit Module Configuration Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editModuleConfigTypeForm" method="post" action="{% url 'module_config_type_update' module_config.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="id" value="{{ module_config.id }}">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" value="{{ module_config.name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>PCB Components</h6>
+                        <div id="edit_pcb_components">
+                            {% for pcb_config in pcb_configs %}
+                            <div class="row mb-2">
+                                <div class="col-md-8">
+                                    <select class="form-select" name="pcb_type_{{ pcb_config.pcb_type.id }}">
+                                        <option value="">Select PCB Type</option>
+                                        {% for pcb in pcb_types %}
+                                            <option value="{{ pcb.id }}" {% if pcb.id == pcb_config.pcb_type.id %}selected{% endif %}>{{ pcb.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control" name="quantity_{{ pcb_config.pcb_type.id }}" min="1" value="{{ pcb_config.quantity }}" placeholder="Quantity">
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-outline-danger remove-edit-pcb-btn">-</button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            <!-- Empty row for adding new PCBs -->
+                            <div class="row mb-2">
+                                <div class="col-md-8">
+                                    <select class="form-select" name="pcb_type_new">
+                                        <option value="">Select PCB Type</option>
+                                        {% for pcb in pcb_types %}
+                                            <option value="{{ pcb.id }}">{{ pcb.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control" name="quantity_new" min="1" value="1" placeholder="Quantity">
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-outline-primary add-edit-pcb-btn">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Module Config Type</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add event listeners to the remove buttons
+    document.querySelectorAll('.remove-edit-pcb-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            if (document.querySelectorAll('#edit_pcb_components > .row').length > 2) { // Keep at least the input row
+                this.closest('.row').remove();
+            }
+        });
+    });
+    
+    // Add functionality to add more PCBs in edit modal
+    document.querySelectorAll('.add-edit-pcb-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const container = document.getElementById('edit_pcb_components');
+            const index = container.querySelectorAll('.row').length;
+            const newPcbDiv = document.createElement('div');
+            newPcbDiv.className = 'row mb-2';
+            newPcbDiv.innerHTML = `
+                <div class="col-md-8">
+                    <select class="form-select" name="pcb_type_${index}">
+                        <option value="">Select PCB Type</option>
+                        {% for pcb in pcb_types %}
+                            <option value="{{ pcb.id }}">{{ pcb.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" class="form-control" name="quantity_${index}" min="1" value="1" placeholder="Quantity">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-outline-danger remove-edit-pcb-btn">-</button>
+                </div>
+            `;
+            container.appendChild(newPcbDiv);
+            
+            // Add event listener to the new remove button
+            newPcbDiv.querySelector('.remove-edit-pcb-btn').addEventListener('click', function() {
+                if (document.querySelectorAll('#edit_pcb_components > .row').length > 2) { // Keep at least the input row
+                    this.closest('.row').remove();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

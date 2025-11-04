@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}Module: {{ module.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Module: {{ module.name }}</h2>
+        <a href="{% url 'module_list' %}" class="btn btn-secondary">Back to Modules</a>
+    </div>
+
+    <!-- Module Information -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Module Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Name:</strong> {{ module.name }}</p>
+                    <p><strong>Serial Number:</strong> {{ module.serial_number|default:"-" }}</p>
+                    <p><strong>Configuration Type:</strong> {{ module.module_config.name }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Technician:</strong> {{ module.technician.username|default:"Not assigned" }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge 
+                            {% if module.status == 'New' %}bg-secondary
+                            {% elif module.status == 'ATP_1_Pending' or module.status == 'ATP_2_Pending' %}bg-warning
+                            {% elif module.status == 'ATP_1_Complete' or module.status == 'ATP_2_Complete' %}bg-success
+                            {% elif module.status == 'ESS_Pending' %}bg-warning
+                            {% elif module.status == 'ESS_Complete' %}bg-success
+                            {% elif module.status == 'Shipped' %}bg-info
+                            {% else %}bg-light{% endif %}">
+                            {{ module.get_status_display }}
+                        </span>
+                    </p>
+                    <p><strong>Created:</strong> {{ module.created_at|date:"M d, Y H:i" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Module Status Change Form (for technicians) -->
+    {% if perms.module_app.change_module %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Update Module Status</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{% url 'module_status_change' module.id %}">
+                {% csrf_token %}
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">New Status</label>
+                        <select class="form-select" id="status" name="status" required>
+                            {% for code, name in module.STATUS_CHOICES %}
+                                <option value="{{ code }}" 
+                                    {% if code == module.status %}selected{% endif %}
+                                    {% if code == 'New' and module.status != 'New' %}disabled{% endif %}
+                                    {% if module.status == 'ATP_1_Complete' and code == 'ATP_1_Pending' %}disabled{% endif %}
+                                    {% if module.status == 'ESS_Complete' and code == 'ATP_1_Pending' %}disabled{% endif %}
+                                    {% if module.status == 'ESS_Complete' and code == 'ATP_1_Complete' %}disabled{% endif %}
+                                    {% if module.status == 'ESS_Complete' and code == 'ESS_Pending' %}disabled{% endif %}
+                                    {% if module.status == 'ATP_2_Complete' and code == 'ATP_1_Pending' %}disabled{% endif %}
+                                    {% if module.status == 'ATP_2_Complete' and code == 'ATP_1_Complete' %}disabled{% endif %}
+                                    {% if module.status == 'ATP_2_Complete' and code == 'ESS_Pending' %}disabled{% endif %}
+                                    {% if module.status == 'ATP_2_Complete' and code == 'ESS_Complete' %}disabled{% endif %}
+                                    {% if module.status == 'ATP_2_Complete' and code == 'ATP_2_Pending' %}disabled{% endif %}>
+                                    {{ name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary">Update Status</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ATP Reports Section -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>ATP Reports</h5>
+            {% if perms.module_app.change_module %}
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addATPReportModal">
+                <i class="bi bi-plus-circle"></i> Add ATP Report
+            </button>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if atp_reports %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Test Phase</th>
+                                <th>Report Data</th>
+                                <th>File</th>
+                                <th>QA Signoff</th>
+                                <th>Timestamp</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in atp_reports %}
+                            <tr>
+                                <td>{{ report.get_test_phase_display }}</td>
+                                <td>{{ report.report_data|truncatechars:50|default:"No data" }}</td>
+                                <td>
+                                    {% if report.report_file %}
+                                        <a href="{{ report.report_file.url }}" target="_blank">Download File</a>
+                                    {% else %}
+                                        No file
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if report.qa_signoff %}
+                                        <span class="badge bg-success">Signed off by {{ report.signed_off_by.username }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% if perms.module_app.change_atpreport %}
+                                        <form method="post" action="{% url 'module_signoff_report' 'atp' report.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-success">Sign Off</button>
+                                        </form>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>{{ report.timestamp|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <a href="{{ report.report_file.url }}" class="btn btn-sm btn-outline-primary" target="_blank" download>
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No ATP reports available for this module.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ESS Reports Section -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5>ESS Reports</h5>
+            {% if perms.module_app.change_module %}
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addESSReportModal">
+                <i class="bi bi-plus-circle"></i> Add ESS Report
+            </button>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if ess_reports %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Report Data</th>
+                                <th>File</th>
+                                <th>QA Signoff</th>
+                                <th>Timestamp</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in ess_reports %}
+                            <tr>
+                                <td>{{ report.report_data|truncatechars:50|default:"No data" }}</td>
+                                <td>
+                                    {% if report.report_file %}
+                                        <a href="{{ report.report_file.url }}" target="_blank">Download File</a>
+                                    {% else %}
+                                        No file
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if report.qa_signoff %}
+                                        <span class="badge bg-success">Signed off by {{ report.signed_off_by.username }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% if perms.module_app.change_essreport %}
+                                        <form method="post" action="{% url 'module_signoff_report' 'ess' report.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-success">Sign Off</button>
+                                        </form>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>{{ report.timestamp|date:"M d, Y H:i" }}</td>
+                                <td>
+                                    <a href="{{ report.report_file.url }}" class="btn btn-sm btn-outline-primary" target="_blank" download>
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No ESS reports available for this module.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Add ATP Report Modal -->
+{% if user.groups.all|map:"name"|join:" "|split:" "|contains:"module_test_group" %}
+<div class="modal fade" id="addATPReportModal" tabindex="-1" aria-labelledby="addATPReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addATPReportModalLabel">Add ATP Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'module_add_atp_report' module.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="test_phase" class="form-label">Test Phase</label>
+                        <select class="form-select" id="test_phase" name="test_phase" required>
+                            <option value="ATP_1">ATP 1</option>
+                            <option value="ATP_2">ATP 2</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="report_data" class="form-label">Report Data (optional)</label>
+                        <textarea class="form-control" id="report_data" name="report_data" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="report_file" class="form-label">Report File (optional)</label>
+                        <input type="file" class="form-control" id="report_file" name="report_file">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Add ESS Report Modal -->
+{% if user.groups.all|map:"name"|join:" "|split:" "|contains:"module_test_group" %}
+<div class="modal fade" id="addESSReportModal" tabindex="-1" aria-labelledby="addESSReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addESSReportModalLabel">Add ESS Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'module_add_ess_report' module.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="ess_report_data" class="form-label">Report Data (optional)</label>
+                        <textarea class="form-control" id="ess_report_data" name="report_data" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ess_report_file" class="form-label">Report File (optional)</label>
+                        <input type="file" class="form-control" id="ess_report_file" name="report_file">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

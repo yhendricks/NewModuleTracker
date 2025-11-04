@@ -686,4 +686,4 @@ def pcb_test_complete(request, pk):
 
 
 # Call the function to create the group
-create_pcb_test_result_management_group()
+# create_pcb_test_result_management_group()  # Commented out until the function is properly defined

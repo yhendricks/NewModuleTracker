@@ -1,40 +1,469 @@
 {% extends 'base.html' %}
 
+{% block title %}Module Configuration Types{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2 class="my-4">Module Configuration Types</h2>
-    
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Module Configuration Types</h2>
     {% if perms.module_config_type_app.add_moduleconfigtype %}
-        <a href="#" class="btn btn-primary mb-3">
-            <i class="bi bi-plus-circle"></i> Create New Module Configuration
-        </a>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModuleConfigTypeModal">
+            <i class="bi bi-plus-circle"></i> Add Module Config Type
+        </button>
     {% endif %}
-    
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">Existing Configurations</h5>
-            <ul class="list-group list-group-flush">
-                {% for config in module_config_types %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ config.name }}
-                        <div>
-                            {% if perms.module_config_type_app.change_moduleconfigtype %}
-                                <a href="#" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </a>
-                            {% endif %}
-                            {% if perms.module_config_type_app.delete_moduleconfigtype %}
-                                <a href="#" class="btn btn-sm btn-outline-danger">
-                                    <i class="bi bi-trash"></i> Delete
-                                </a>
-                            {% endif %}
+</div>
+
+<!-- Add Module Config Type Modal -->
+{% if perms.module_config_type_app.add_moduleconfigtype %}
+<div class="modal fade" id="addModuleConfigTypeModal" tabindex="-1" aria-labelledby="addModuleConfigTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addModuleConfigTypeModalLabel">Add New Module Configuration Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'module_config_type_create' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="add_name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="add_name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>PCB Components</h6>
+                        <div id="add_pcb_components">
+                            <div class="row mb-2">
+                                <div class="col-md-8">
+                                    <select class="form-select pcb-select" name="pcb_type_0">
+                                        <option value="">Select PCB Type</option>
+                                        {% for pcb in pcb_types %}
+                                            <option value="{{ pcb.id }}">{{ pcb.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control" name="quantity_0" min="1" value="1" placeholder="Quantity">
+                                </div>
+                                <div class="col-md-1">
+                                    <button type="button" class="btn btn-outline-danger remove-pcb-btn" disabled>-</button>
+                                </div>
+                            </div>
                         </div>
-                    </li>
-                {% empty %}
-                    <li class="list-group-item">No module configuration types found.</li>
-                {% endfor %}
-            </ul>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="add_pcb_row">Add PCB</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save Module Config Type</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+{% endif %}
+
+<!-- Edit Module Config Type Modal -->
+{% if perms.module_config_type_app.change_moduleconfigtype %}
+<div class="modal fade" id="editModuleConfigTypeModal" tabindex="-1" aria-labelledby="editModuleConfigTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModuleConfigTypeModalLabel">Edit Module Configuration Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editModuleConfigTypeForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="id">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>PCB Components</h6>
+                        <div id="edit_pcb_components">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="add_edit_pcb_row">Add PCB</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Update Module Config Type</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+{% if perms.module_config_type_app.delete_moduleconfigtype %}
+<div class="modal fade" id="deleteModuleConfigTypeModal" tabindex="-1" aria-labelledby="deleteModuleConfigTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModuleConfigTypeModalLabel">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="deleteModuleConfigTypeForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="delete_id" name="id">
+                    <p>Are you sure you want to delete the Module Config Type "<strong id="moduleConfigTypeNameToDelete"></strong>"?</p>
+                    <p class="text-danger">This action cannot be undone.</p>
+                    <p>Please type the exact name of the Module Config Type to confirm deletion:</p>
+                    <input type="text" class="form-control" id="confirmDeleteName" name="confirm_name" placeholder="Type the name here..." required>
+                    <div id="deleteNameMismatch" class="text-danger mt-2" style="display:none;">Name does not match!</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn" disabled>Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Filter Control -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <label for="search" class="form-label">Search Module Config Types</label>
+                <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}" placeholder="Search by name...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    <a href="{% url 'module_config_type_list' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Module Config Types Table -->
+<div class="card">
+    <div class="card-body">
+        {% if module_config_types %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">PCB Components</th>
+                            <th scope="col">Modules Using This Config</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for config in module_config_types %}
+                            <tr>
+                                <td>{{ config.name }}</td>
+                                <td>
+                                    {% for pcb_config in config.moduleconfigpcb_set.all %}
+                                        <div>{{ pcb_config.quantity }} x {{ pcb_config.pcb_type.name }}</div>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {{ config.module_set.count }}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'module_config_type_detail' config.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if perms.module_config_type_app.change_moduleconfigtype %}
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                                    onclick="editModuleConfigType({{ config.id }})"
+                                                    data-bs-toggle="modal" data-bs-target="#editModuleConfigTypeModal">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        {% endif %}
+                                        {% if perms.module_config_type_app.delete_moduleconfigtype %}
+                                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                    onclick="deleteModuleConfigType({{ config.id }}, '{{ config.name|escapejs }}')"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModuleConfigTypeModal">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if module_config_types.has_other_pages %}
+                <nav aria-label="Module Config Types pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if module_config_types.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">First</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ module_config_types.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">First</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Previous</span>
+                            </li>
+                        {% endif %}
+
+                        {% for num in module_config_types.paginator.page_range %}
+                            {% if module_config_types.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > module_config_types.number|add:'-3' and num < module_config_types.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if module_config_types.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ module_config_types.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ module_config_types.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">Last</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Next</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Last</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-layout-text-sidebar-reverse" style="font-size: 3rem;"></i>
+                <h4 class="mt-3">No Module Config Types Found</h4>
+                <p class="text-muted">
+                    {% if search_query %}
+                        No module config types match your search for "{{ search_query }}".
+                    {% else %}
+                        Get started by adding your first module config type.
+                    {% endif %}
+                </p>
+                {% if perms.module_config_type_app.add_moduleconfigtype %}
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModuleConfigTypeModal">
+                        <i class="bi bi-plus-circle"></i> Add Module Config Type
+                    </button>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let pcbCounter = 1;
+    
+    // Add a new PCB row for add modal
+    document.getElementById('add_pcb_row').addEventListener('click', function() {
+        const newPcbDiv = document.createElement('div');
+        newPcbDiv.className = 'row mb-2';
+        newPcbDiv.innerHTML = `
+            <div class="col-md-8">
+                <select class="form-select pcb-select" name="pcb_type_${pcbCounter}">
+                    <option value="">Select PCB Type</option>
+                    {% for pcb in pcb_types %}
+                        <option value="{{ pcb.id }}">{{ pcb.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="number" class="form-control" name="quantity_${pcbCounter}" min="1" value="1" placeholder="Quantity">
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-outline-danger remove-pcb-btn">-</button>
+            </div>
+        `;
+        document.getElementById('add_pcb_components').appendChild(newPcbDiv);
+        pcbCounter++;
+        
+        // Add event listener to the new remove button
+        newPcbDiv.querySelector('.remove-pcb-btn').addEventListener('click', function() {
+            if (document.querySelectorAll('#add_pcb_components > .row').length > 1) {
+                newPcbDiv.remove();
+            }
+        });
+    });
+    
+    // Add event listeners to existing remove buttons
+    document.querySelectorAll('.remove-pcb-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            if (this.textContent !== '-' || document.querySelectorAll('#add_pcb_components > .row').length > 1) {
+                if (this.closest('.row').parentElement.querySelectorAll('.row').length > 1) {
+                    this.closest('.row').remove();
+                }
+            }
+        });
+    });
+    
+    // Edit Module Config Type functionality
+    async function editModuleConfigType(id) {
+        try {
+            const response = await fetch(`/module_config_type/update/${id}/?format=json`);
+            const data = await response.json();
+            
+            document.getElementById('edit_id').value = data.id;
+            document.getElementById('edit_name').value = data.name;
+            
+            // Clear existing PCB components
+            const container = document.getElementById('edit_pcb_components');
+            container.innerHTML = '';
+            
+            // Add PCB components based on the config
+            if (data.pcbs.length > 0) {
+                data.pcbs.forEach((pcb, index) => {
+                    const pcbDiv = document.createElement('div');
+                    pcbDiv.className = 'row mb-2';
+                    pcbDiv.innerHTML = `
+                        <div class="col-md-8">
+                            <select class="form-select" name="pcb_type_${index}">
+                                <option value="">Select PCB Type</option>
+                                {% for pcb in pcb_types %}
+                                    <option value="{{ pcb.id }}" ${pcb.id == pcb.id ? 'selected' : ''}>{{ pcb.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="number" class="form-control" name="quantity_${index}" min="1" value="${pcb.quantity}" placeholder="Quantity">
+                        </div>
+                        <div class="col-md-1">
+                            <button type="button" class="btn btn-outline-danger remove-edit-pcb-btn">-</button>
+                        </div>
+                    `;
+                    container.appendChild(pcbDiv);
+                });
+            } else {
+                // Add a default row if no PCBs
+                const pcbDiv = document.createElement('div');
+                pcbDiv.className = 'row mb-2';
+                pcbDiv.innerHTML = `
+                    <div class="col-md-8">
+                        <select class="form-select" name="pcb_type_0">
+                            <option value="">Select PCB Type</option>
+                            {% for pcb in pcb_types %}
+                                <option value="{{ pcb.id }}">{{ pcb.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" name="quantity_0" min="1" value="1" placeholder="Quantity">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-outline-danger remove-edit-pcb-btn" ${data.pcbs.length <= 1 ? 'disabled' : ''}>-</button>
+                    </div>
+                `;
+                container.appendChild(pcbDiv);
+            }
+            
+            // Update form action with the correct URL
+            document.getElementById('editModuleConfigTypeForm').action = `/module_config_type/update/${id}/`;
+            
+            // Add event listeners to the remove buttons
+            document.querySelectorAll('.remove-edit-pcb-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (document.querySelectorAll('#edit_pcb_components > .row').length > 1) {
+                        this.closest('.row').remove();
+                    }
+                });
+            });
+            
+            // Add functionality to add more PCBs in edit modal
+            document.getElementById('add_edit_pcb_row').onclick = function() {
+                const index = container.querySelectorAll('.row').length;
+                const newPcbDiv = document.createElement('div');
+                newPcbDiv.className = 'row mb-2';
+                newPcbDiv.innerHTML = `
+                    <div class="col-md-8">
+                        <select class="form-select" name="pcb_type_${index}">
+                            <option value="">Select PCB Type</option>
+                            {% for pcb in pcb_types %}
+                                <option value="{{ pcb.id }}">{{ pcb.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" class="form-control" name="quantity_${index}" min="1" value="1" placeholder="Quantity">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-outline-danger remove-edit-pcb-btn">-</button>
+                    </div>
+                `;
+                container.appendChild(newPcbDiv);
+                
+                // Add event listener to the new remove button
+                newPcbDiv.querySelector('.remove-edit-pcb-btn').addEventListener('click', function() {
+                    if (document.querySelectorAll('#edit_pcb_components > .row').length > 1) {
+                        this.closest('.row').remove();
+                    }
+                });
+            };
+        } catch (error) {
+            console.error('Error fetching module config type data:', error);
+        }
+    }
+    
+    // Delete Module Config Type functionality
+    function deleteModuleConfigType(id, name) {
+        // Set the config type name in the modal
+        document.getElementById('moduleConfigTypeNameToDelete').textContent = name;
+        document.getElementById('delete_id').value = id;
+        
+        // Clear any previous input and errors
+        document.getElementById('confirmDeleteName').value = '';
+        document.getElementById('deleteNameMismatch').style.display = 'none';
+        document.getElementById('confirmDeleteBtn').disabled = true;
+        
+        // Update the form action to point to the correct URL
+        document.getElementById('deleteModuleConfigTypeForm').action = `/module_config_type/delete/${id}/`;
+    }
+    
+    // Handle delete confirmation input
+    document.getElementById('confirmDeleteName').addEventListener('input', function() {
+        const inputName = this.value;
+        const expectedName = document.getElementById('moduleConfigTypeNameToDelete').textContent;
+        const mismatchElement = document.getElementById('deleteNameMismatch');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        if (inputName === expectedName) {
+            mismatchElement.style.display = 'none';
+            confirmBtn.disabled = false;
+        } else {
+            mismatchElement.style.display = 'block';
+            confirmBtn.disabled = true;
+        }
+    });
+    
+    // Fix the template variable for the edit modal
+    document.querySelectorAll('.form-select').forEach(select => {
+        if (select.name && select.name.startsWith('pcb_type_')) {
+            // Set the correct selected option when editing
+            const selectedOption = select.querySelector(`option[value="${select.getAttribute('data-selected-value')}"]`);
+            if (selectedOption) {
+                selectedOption.selected = true;
+            }
+        }
+    });
+</script>
 {% endblock %}
